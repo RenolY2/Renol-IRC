@@ -25,8 +25,6 @@ class commandHandling():
         self.topic = {}
         self.cmdprefix = cmdprefix
         
-        self.NEM_listversion = "1.5.2"
-        
         self.events = {"time" : TimerEvent(), "chat" : MsgEvent()}
         self.server = None
         
