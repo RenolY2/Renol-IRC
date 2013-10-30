@@ -43,9 +43,6 @@ class IRC_Main():
         self.readThread.start()
         self.writeThread.start()
         
-
-        state = 1
-        
         self.writeThread.sendMsg('PASS ' + self.passw, 0)
         self.writeThread.sendMsg('NICK ' + self.name, 0)
         self.writeThread.sendMsg('USER '+ self.myident + ' '+self.passw+' '+"HOST"+' '+self.host, 0)
