@@ -88,8 +88,8 @@ class commandHandling():
         # otherwise, the default one, i.e. self.defaultsplitter, is used
         if msgsplitter == None:
             msgsplitter = self.defaultsplitter
-        
-        prefixLen = len(self.name)  + len(self.ident) + 63 + len("PRIVMSG") + len(channel) + 25
+                                                      #PRIVMSG
+        prefixLen = len(self.name)  + len(self.ident) + 63 + 7 + len(channel) + 25
         remaining = 512-prefixLen
         #print remaining
         
@@ -106,8 +106,8 @@ class commandHandling():
         # Only difference is that this message is sent as a NOTICE
         if msgsplitter == None:
             msgsplitter = self.defaultsplitter
-        
-        prefixLen = len(self.name)  + len(self.ident) + 63 + len("NOTICE") + len(destination) + 25
+                                                            #NOTICE
+        prefixLen = len(self.name)  + len(self.ident) + 63 + 6 + len(destination) + 25
         remaining = 512-prefixLen
         #print remaining
         
