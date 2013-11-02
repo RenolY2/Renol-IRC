@@ -206,6 +206,14 @@ class commandHandling():
         for i in ModuleList:
             module = imp.load_source(i[0:-2], path+"/"+i)
             Packet[module.ID] = (module, path+"/"+i)
+            
+            try:
+                if not callable(module.__initialize__):
+                    module.__initialize__ = False
+            except AttributeError:
+                module.__initialize__ = False
+                
+            Packet[module.ID] = (module, path+"/"+i)
             #Packet[i[1].lower()].PATH = path + "/"+i[2]
             #self.Packet[i[1]] = self.Packet[i[1]].EXEC()
         
