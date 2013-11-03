@@ -25,7 +25,7 @@ class IRC_reader(threading.Thread):
         #self.port = port
         self.sock = serverSock
         self.ready = True
-        self.line = ""
+        self.linebuffer = ""
         
         self.buffer = Queue.Queue()
         
@@ -34,7 +34,7 @@ class IRC_reader(threading.Thread):
         
             while self.ready == True:
                 try:
-                    char = self.sock.recv(1)
+                    data = self.sock.recv(1024)
                 except Exception as error:
                     print 
                     print "ERROR: "+str(error)
@@ -42,15 +42,17 @@ class IRC_reader(threading.Thread):
                     self.ready = False
                     break
                 else:
-                    if char != "":
-                        #print char
-                        self.line += char
-                        
-                    # Check if current character is a LF and last character was a CL, if so: Put line into buffer!    
-                    if len(self.line) > 1 and ord(char) == 10 and ord(self.line[-2]) == 13:
-                        #print "RECEIVED: "+self.line
-                        self.buffer.put(self.line[0:-2], True)         # Omit these annoying CL-LF's, we do not need them anymore!
-                        self.line = ""
+                    if data != "":
+                        # print "RAWIN: %s" % data
+                        self.linebuffer += data
+
+                    lines = self.linebuffer.split("\n")
+                    self.linebuffer = lines.pop()
+
+                    for line in lines:
+                        # print "IN: %s" % line
+                        line = line.rstrip()  # Strip whitespace to the right
+                        self.buffer.put(line, True)
             print "ReadThread is down!"
         
     
