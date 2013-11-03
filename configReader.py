@@ -86,11 +86,3 @@ class Configuration():
             newadmins.append(admin)
         
         return admins
-
-
-conf = Configuration()
-print conf.doesExist()
-#conf.createNewConfig()
-print conf.doesExist()
-conf.loadConfig()
-print conf.getChannels()
