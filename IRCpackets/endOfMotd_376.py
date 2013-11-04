@@ -15,6 +15,6 @@ def execute(self, sendMsg, prefix, command, params):
     
     for cmd in self.commands:
         if self.commands[cmd][0].__initialize__ != False:
-            self.commands[cmd][0].__initialize__(self)
+            self.commands[cmd][0].__initialize__(self, True)
     
         

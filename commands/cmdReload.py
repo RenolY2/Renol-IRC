@@ -12,6 +12,8 @@ def execute(self, name, params, channel, userdata, rank):
         
         self.sendChatMessage(self.send, channel, "Reloading "+path)
         self.commands[cmd] = (imp.load_source(cmd, path), path)
+        if self.commands[cmd][0].__initialize__ != False:
+                self.commands[cmd][0].__initialize__(self, False)
         self.sendChatMessage(self.send, channel, "Done!")
     
     elif len(params) > 0 and params[0] not in self.commands:
@@ -19,4 +21,7 @@ def execute(self, name, params, channel, userdata, rank):
     else:
         self.sendChatMessage(self.send, channel, "Reloading..")
         self.commands = self.__LoadModules__("commands")
+        for cmd in self.commands:
+            if self.commands[cmd][0].__initialize__ != False:
+                self.commands[cmd][0].__initialize__(self, False)
         self.sendChatMessage(self.send, channel, "Done!")
