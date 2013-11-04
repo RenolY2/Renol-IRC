@@ -98,7 +98,7 @@ class IRC_Main():
             
             
             
-            time.sleep(0.001)
+            time.sleep(0.0012)
         self.readThread.ready = False
         self.writeThread.ready = False
         
@@ -152,6 +152,11 @@ except Exception as error:
             excFile.write(bot.comHandle.PacketsReceivedBeforeDeath.get(block = False)+"\n")
         
     excFile.write("-----------------------------------------------------\n")
+    excFile.write("ReadThread Exception: \n")
+    excFile.write(str(bot.readThread.error)+" \n")
+    excFile.write("-----------------------------------------------------\n")
+    excFile.write("WriteThread Exception: \n")
+    excFile.write(str(bot.writeThread.error)+" \n")
     excFile.close
     
     bot.comHandle.threading.sigquitAll()

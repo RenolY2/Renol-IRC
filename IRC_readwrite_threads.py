@@ -27,6 +27,8 @@ class IRC_reader(threading.Thread):
         self.ready = True
         self.linebuffer = ""
         
+        self.error = None
+        
         self.buffer = Queue.Queue()
         
     def run(self):
@@ -39,6 +41,7 @@ class IRC_reader(threading.Thread):
                     print 
                     print "ERROR: "+str(error)
                     print
+                    self.error = error
                     self.ready = False
                     break
                 else:
@@ -77,6 +80,7 @@ class IRC_writer(threading.Thread):
         self.signal = False
         self.died = False
         
+        self.error = None
         self.buffer = Queue.Queue()
         
     def run(self):
@@ -102,6 +106,7 @@ class IRC_writer(threading.Thread):
                 print 
                 print "ERROR: "+str(error)
                 print
+                self.error = error
                 self.ready = False
                 break
             else:
