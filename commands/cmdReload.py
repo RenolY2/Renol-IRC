@@ -12,7 +12,14 @@ def execute(self, name, params, channel, userdata, rank):
         
         self.sendChatMessage(self.send, channel, "Reloading "+path)
         self.commands[cmd] = (imp.load_source(cmd, path), path)
-        if self.commands[cmd][0].__initialize__ != False:
+        
+        try:
+            if not callable(self.commands[cmd][0].__initialize__):
+               self.commands[cmd][0].__initialize__ = False
+        except AttributeError:
+            self.commands[cmd][0].__initialize__ = False
+        else:
+            if self.commands[cmd][0].__initialize__ != False:
                 self.commands[cmd][0].__initialize__(self, False)
         self.sendChatMessage(self.send, channel, "Done!")
     

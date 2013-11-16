@@ -15,11 +15,9 @@ class trackVerification():
         self.userQueue = []
     
     def doesExist(self, user):
-        #print "yup", user.lower(), self.users
         return user.lower() in self.users
     
     def isQueued(self, user):
-        #print "nup"
         return user.lower() in self.userQueue
     
     def queueUser(self, user):
@@ -39,7 +37,6 @@ class trackVerification():
             return False
     
     def isRegistered(self, user):
-        #print "hurp"
         user = user.lower()
         if user in self.users and self.users[user] == True:
             return True

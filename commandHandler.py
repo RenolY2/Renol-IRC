@@ -6,8 +6,6 @@ from BotEvents import TimerEvent, MsgEvent
 from IRC_registration import trackVerification
 
 
-
-
 class commandHandling():
     def __init__(self, channels, cmdprefix, name, ident, adminlist):
         self.name = name
@@ -44,7 +42,6 @@ class commandHandling():
         try:
             self.PacketsReceivedBeforeDeath.put("{0} {1} {2}".format(prefix, command, params), False)
         except Queue.Full:
-            #print "Crap, Queue is full"
             self.PacketsReceivedBeforeDeath.get(block = False)
             self.PacketsReceivedBeforeDeath.put("{0} {1} {2}".format(prefix, command, params), False)
         
@@ -89,7 +86,7 @@ class commandHandling():
         if msgsplitter == None:
             msgsplitter = self.defaultsplitter
                                                       #PRIVMSG
-        prefixLen = len(self.name)  + len(self.ident) + 63 + 7 + len(channel) + 25
+        prefixLen = len(self.name) + len(self.ident) + 63 + 7 + len(channel) + 25
         remaining = 512-prefixLen
         #print remaining
         
@@ -107,7 +104,7 @@ class commandHandling():
         if msgsplitter == None:
             msgsplitter = self.defaultsplitter
                                                             #NOTICE
-        prefixLen = len(self.name)  + len(self.ident) + 63 + 6 + len(destination) + 25
+        prefixLen = len(self.name) + len(self.ident) + 63 + 6 + len(destination) + 25
         remaining = 512-prefixLen
         #print remaining
         
@@ -190,18 +187,12 @@ class commandHandling():
         newlist = []
         for i in files:
             if ".pyc" not in i and "__init__" not in i and "conflicted copy" not in i and ".py" in i:
-                #sep1 = i.find("_")
-                #sep2 = i.find(".py")
-                #PID = i[0:sep1]
-                #Name = i[sep1+1:sep2]
-                #print Name, PID, i
                 newlist.append(i)
                 
         return newlist
     
     def __LoadModules__(self,path):     
         ModuleList = self.__ListDir__(path)
-        #print ModuleList
         Packet = {}
         for i in ModuleList:
             module = imp.load_source(i[0:-2], path+"/"+i)
@@ -219,5 +210,3 @@ class commandHandling():
         
         print "ALL MODULES LOADED"   
         return Packet
-
-#com = commandHandling()

@@ -150,7 +150,7 @@ except Exception as error:
     if getattr(bot, "comHandle", None) != None: 
         for i in range(bot.comHandle.PacketsReceivedBeforeDeath.qsize()):
             excFile.write(bot.comHandle.PacketsReceivedBeforeDeath.get(block = False)+"\n")
-        
+        bot.comHandle.threading.sigquitAll()
     excFile.write("-----------------------------------------------------\n")
     excFile.write("ReadThread Exception: \n")
     excFile.write(str(bot.readThread.error)+" \n")
@@ -159,7 +159,7 @@ except Exception as error:
     excFile.write(str(bot.writeThread.error)+" \n")
     excFile.close
     
-    bot.comHandle.threading.sigquitAll()
+    
     
     bot.readThread.ready = False
     #bot.writeThread.waitUntilEmpty()
