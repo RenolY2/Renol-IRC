@@ -70,6 +70,9 @@ class commandHandling():
                 return chan
         return False
     
+    def sendMessage(self, channel, msg, msgsplitter = None, splitAt = " "):
+        self.sendChatMessage(self.send, channel, msg, msgsplitter, splitAt)
+    
     def sendChatMessage(self, send, channel, msg, msgsplitter = None, splitAt = " "):
         # we calculate a max length value based on what the server would send to other users 
         # if this bot sent a message.
