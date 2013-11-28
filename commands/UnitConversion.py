@@ -3,11 +3,16 @@ permission = 0
 
 import simplejson
 import urllib2
-import urllib
 from os import makedirs
+import os.path as os_path
 
 def UpdateRates(appid, path):
     try:
+        dir = "/".join(path.split("/")[:-1])
+        if not os_path.exists(dir):
+            print dir
+            makedirs(dir)
+            
         url = "http://openexchangerates.org/api/latest.json?app_id={0}".format(appid)
         
         exrate = urllib2.urlopen(url, timeout = 15)
@@ -19,17 +24,8 @@ def UpdateRates(appid, path):
         data.close()
         
         return simplejson.loads(result)["rates"]
-    except IOError as error:
-        dir = "/".join(path.split("/")[:-1])
-        makedirs(dir)
-        
-        data = open(path, "w")
-        data.write(result)
-        data.close()
-        
-        return simplejson.loads(result)["rates"]
     except Exception as error:
-        print str(error)
+        print str(error), "wat"
         return None
 
 def read_CurrencyRate(path):
@@ -54,8 +50,8 @@ def matchGroup(item1, item2):
     return False, None
 
 def __initialize__(self, Startup):
-    if Startup == True:
-        self.unit_conversion = conversion
+    #if Startup == True:
+    self.unit_conversion = conversion
 
 words = ["to", "in"]
 currency_path = "commands/Currency/currency_data.txt"
@@ -78,7 +74,7 @@ conversion = {  "distance":{"m" : 1, "ft" : 0.3048, "km" : 1000, "mi" : 1609.344
 # An App ID is required for using the API from the website.
 # Register an account on the website to receive your own App ID, or ask me for one.
 # A free account can access the API 1000 times per month
-appid = "PutYourAppidHere"
+appid = "48468715107f410f8879f6f3d7d4a231"
 
 
 # We check if the local file with the currency exchange rates exists locally.
