@@ -23,16 +23,22 @@ def UpdateRates(appid, path):
         data.write(result)
         data.close()
         
-        return simplejson.loads(result)["rates"]
+        return invertRates(simplejson.loads(result)["rates"])
     except Exception as error:
         print str(error), "wat"
         return None
+
+def invertRates(rates):
+    for item in rates:
+        rates[item] = 1.0/rates[item]
+    
+    return rates
 
 def read_CurrencyRate(path):
     file = open(path, "r")
     data = simplejson.loads(file.read())
     file.close()
-    return data["rates"]
+    return invertRates(data["rates"])
 
 
 
@@ -91,7 +97,7 @@ except Exception as error:
     # If downloading fails, let's use some placeholder data
     if result == None:
         # Euro, US Dollar, British Pound, Japanese Yen, Australian Dollar, Canadian Dollar
-        conversion["currency"] = {"EUR" : 0.7352, "USD" : 1, "GBP" : 0.6116, "JPY" : 102.135, "AUD" : 1.0995, "CAD" : 1.0585}
+        conversion["currency"] = {"EUR" : 1/0.7352, "USD" : 1, "GBP" : 1/0.6116, "JPY" : 1/102.135, "AUD" : 1/1.0995, "CAD" : 1/1.0585}
     else:
         conversion["currency"] = result
 
