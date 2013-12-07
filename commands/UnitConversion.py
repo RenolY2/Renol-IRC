@@ -61,8 +61,8 @@ def __initialize__(self, Startup):
 
 words = ["to", "in"]
 currency_path = "commands/Currency/currency_data.txt"
-conversion = {  "distance":{"m" : 1, "ft" : 0.3048, "km" : 1000, "mi" : 1609.344, "in" : 0.0254,
-                            "cm" : 1/100, "mm" : 1/1000, "nm" : 1/(10**(-9)), "yard" :  0.9144},
+conversion = {  "distance":{"m" : 1.0, "ft" : 0.3048, "km" : 1000, "mi" : 1609.344, "in" : 0.0254,
+                            "cm" : 1.0/100, "mm" : 1.0/1000, "nm" : 1.0/(10**(-9)), "yard" :  0.9144},
                 "area":{},
                 "volume":{},
                 "mass" : {  "kg" : 1, "lb" : 0.45359237, "oz" : 0.028, "st" : 6.35029318, "t" : 1000, "shtn" : 907.18474,
@@ -97,7 +97,7 @@ except Exception as error:
     # If downloading fails, let's use some placeholder data
     if result == None:
         # Euro, US Dollar, British Pound, Japanese Yen, Australian Dollar, Canadian Dollar
-        conversion["currency"] = {"EUR" : 1/0.7352, "USD" : 1, "GBP" : 1/0.6116, "JPY" : 1/102.135, "AUD" : 1/1.0995, "CAD" : 1/1.0585}
+        conversion["currency"] = {"EUR" : 1/0.7352, "USD" : 1.0, "GBP" : 1/0.6116, "JPY" : 1/102.135, "AUD" : 1/1.0995, "CAD" : 1/1.0585}
     else:
         conversion["currency"] = result
 
@@ -134,9 +134,8 @@ def execute(self, name, params, channel, userdata, rank):
                 else:
                     num = int(num)
                     
-            
             base = conversion[group][unit1] * num
-            fin = (1.0/conversion[group][unit2])*base
+            fin = (1.0/float(conversion[group][unit2]))*base
             
             self.sendChatMessage(self.send, channel, "{0} {1} = {3} {2}".format(num, unit1, unit2, fin))
             
