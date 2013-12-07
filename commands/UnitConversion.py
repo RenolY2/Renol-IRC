@@ -80,7 +80,7 @@ conversion = {  "distance":{"m" : 1.0, "ft" : 0.3048, "km" : 1000, "mi" : 1609.3
 # An App ID is required for using the API from the website.
 # Register an account on the website to receive your own App ID, or ask me for one.
 # A free account can access the API 1000 times per month
-appid = "48468715107f410f8879f6f3d7d4a231"
+appid = "insertYourAppid"
 
 
 # We check if the local file with the currency exchange rates exists locally.
