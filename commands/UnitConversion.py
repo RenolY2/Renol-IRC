@@ -42,22 +42,20 @@ def read_CurrencyRate(path):
 
 
 
-def findGroup(item):
-    for group in conversion:
-        if item in conversion[group]:
+def findGroup(item, conv):
+    for group in conv:
+        if item in conv[group]:
             return True, group
     return False, None
 
-def matchGroup(item1, item2):
-    for group in conversion:
-        if item1 in conversion[group] and item2 in conversion[group]:
+def matchGroup(item1, item2, conv):
+    for group in conv:
+        if item1 in conv[group] and item2 in conv[group]:
             return True, group
     
     return False, None
 
-def __initialize__(self, Startup):
-    #if Startup == True:
-    self.unit_conversion = conversion
+
 
 words = ["to", "in"]
 currency_path = "commands/Currency/currency_data.txt"
@@ -101,13 +99,17 @@ except Exception as error:
     else:
         conversion["currency"] = result
 
+def __initialize__(self, Startup):
+    #if Startup == True:
+    self.unit_conversion = conversion
+
 def execute(self, name, params, channel, userdata, rank):
     if len(params) == 1 and params[0].lower() == "update" and rank == "@@":
         data = UpdateRates(appid, currency_path)
         if data == None:
             self.sendChatMessage(self.send, channel, "Failed to update the currency exchange rates.")
         else:
-            self.unit_conversion = data
+            self.unit_conversion["currency"] = data
             self.sendChatMessage(self.send, channel, "Updated currency exchange rates.")
             
     elif len(params) == 4 and params[2].lower() in words or len(params) == 3 and params[2].lower() not in words:
@@ -116,7 +118,7 @@ def execute(self, name, params, channel, userdata, rank):
         unit1 = params[1]
         unit2 = len(params) == 4 and params[3] or params[2]
         
-        doesMatch, group = matchGroup(unit1, unit2)
+        doesMatch, group = matchGroup(unit1, unit2, self.unit_conversion)
         
         if not doesMatch:
             self.sendChatMessage(self.send, channel, "Incompatible or unknown units")
@@ -134,8 +136,8 @@ def execute(self, name, params, channel, userdata, rank):
                 else:
                     num = int(num)
                     
-            base = conversion[group][unit1] * num
-            fin = (1.0/float(conversion[group][unit2]))*base
+            base = self.unit_conversion[group][unit1] * num
+            fin = (1.0/float(self.unit_conversion[group][unit2]))*base
             
             self.sendChatMessage(self.send, channel, "{0} {1} = {3} {2}".format(num, unit1, unit2, fin))
             
