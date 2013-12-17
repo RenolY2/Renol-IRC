@@ -70,14 +70,12 @@ def UpdateRates(appid, path):
         print str(error), "wat"
         return None
 
-# The currency IDs are upper case, we need to make them lower case
-# At the same time, we are inverting them so that they are in
-# the CURRENCY->USD instead of the USD->CURRENCY format
+# We are inverting the data so it is in the
+# the CURRENCY->USD format instead of the USD->CURRENCY format
 def invertRates(rates):
-    newRates = {}
     for item in rates:
-        newRates[item.lower()] = 1.0/rates[item]
-    return newRates
+        rates[item] = 1.0/rates[item]
+    return rates
 
 def read_CurrencyRate(path):
     file = open(path, "r")
@@ -89,18 +87,30 @@ def read_CurrencyRate(path):
 
 def findGroup(item, conv):
     for group in conv:
-        if item in conv[group]:
-            return True, group
-    return False, None
+        trueCase = get_true_case(item, group, conv)
+        if trueCase != False:
+            return True, group, trueCase
+        #if item in conv[group]:
+        #    return True, group
+    return False, None, False
 
 def matchGroup(item1, item2, conv):
     for group in conv:
-        if item1 in conv[group] and item2 in conv[group]:
-            return True, group
+        trueCase1 = get_true_case(item1, group, conv)
+        trueCase2 = get_true_case(item2, group, conv)
+        if trueCase1 != False and trueCase2 != False:
+            # We have found the correct cases of the strings item1 and item2!
+            return True, group, trueCase1, trueCase2
     
-    return False, None
+    # We haven't been successful and have to return placeholder values
+    return False, None, False, False
 
-
+def get_true_case(item, group, dataDict):
+    for key in dataDict[group]:
+        if item.lower() == key.lower():
+            return key
+    
+    return False
 
 
 
@@ -121,7 +131,7 @@ except Exception as error:
     if result == None:
         # Euro, US Dollar, British Pound, Japanese Yen, Australian Dollar, Canadian Dollar
         conversion["currency"] = {"eur" : 1/0.7266, "usd" : 1.0, "gbp" : 1/0.6139, "jpy" : 1/102.969, "aud" : 1/1.1206, "cad" : 1/1.0579}
-        alias["currency"] = {"euro" : "eur", "dollar" : "usd", "pound" : "gbp", "yen" : "jpy"}
+        alias["currency"] = {"euro" : "EUR", "dollar" : "USD", "pound" : "gbp", "yen" : "jpy"}
     else:
         conversion["currency"] = result
         alias["currency"] = {"euro" : "eur", "dollar" : "usd", "pound" : "gbp", "yen" : "jpy", "bitcoin" : "btc"}
@@ -146,7 +156,7 @@ def execute(self, name, params, channel, userdata, rank):
         unit2 = len(params) == 4 and params[3].lower() or params[2].lower()
         
         
-        doesMatch, group = matchGroup(unit1, unit2, self.unit_conversion)
+        doesMatch, group, alias_unit1, alias_unit2 = matchGroup(unit1, unit2, self.unit_conversion)
         
         # Case 1: unit1 and unit2 are both not aliases/alternative names 
         # or not contained within the same group
@@ -154,51 +164,72 @@ def execute(self, name, params, channel, userdata, rank):
             # To avoid long if/else chains, we will do both searches at once
             # 1st check: unit1 is alias, unit2 is normal
             # 2nd check: unit1 is normal, unit2 is alias
-            match_alias1, alias_group1 = findGroup(unit1, alias)
-            match_normal2, norm_group2 = findGroup(unit2, self.unit_conversion)
+            match_alias1, alias_group1, alias_case1 = findGroup(unit1, alias)
+            match_normal2, norm_group2, norm_case2 = findGroup(unit2, self.unit_conversion)
             
             
-            match_normal1, norm_group1 = findGroup(unit1, self.unit_conversion)
-            match_alias2, alias_group2 = findGroup(unit2, alias)
+            match_normal1, norm_group1, norm_case1 = findGroup(unit1, self.unit_conversion)
+            match_alias2, alias_group2, alias_case2 = findGroup(unit2, alias)
             
+            # Case 2.1
             # If a match has been found for both searches, but the groups don't match,
             # we check the group of the normal unit if the alias is contained
             if match_alias1 == True and match_normal2 == True and alias_group1 != norm_group2:
-                if unit1 in alias[norm_group2]:
+                if alias_case1 in alias[norm_group2]:
                     doesMatch = True
                     group = norm_group2
-                    unit1 = alias[norm_group2][unit1]
+                    unit1 = alias[norm_group2][alias_case1]
+                    
+                    unit1 = get_true_case(unit1, norm_group2, self.unit_conversion)
+                    unit2 = norm_case2
+                    
             elif match_alias2 == True and match_normal1 == True and alias_group2 != norm_group1:
-                if unit2 in alias[norm_group1]:
+                if alias_case2 in alias[norm_group1]:
                     doesMatch = True
                     group = norm_group1
-                    unit2 = alias[norm_group1][unit2]
-            
-            # Case 2: unit1 is an alias, unit2 is not an alias, both are contained in the same group
+                    unit2 = alias[norm_group1][alias_case2]
+                    
+                    unit1 = norm_case1
+                    unit2 = get_true_case(unit2, alias_group2, self.unit_conversion)
+                    
+            # Case 3.1: unit1 is an alias, unit2 is not an alias, both are contained in the same group
             elif match_alias1 == True and match_normal2 == True and alias_group1 == norm_group2:
-                unit1 = alias[alias_group1][unit1]
+                print alias, alias_group1, alias_case1
+                unit1 = alias[alias_group1][alias_case1]
+                
+                unit1 = get_true_case(unit1, alias_group1, self.unit_conversion)
+                unit2 = norm_case2
+                
                 doesMatch = True
                 group = alias_group1
-                #print "Case 2"
-            # Case 3: unit1 is not an alias, unit2 is an alias, both are contained in the same group
+                
+            # Case 3.2: unit1 is not an alias, unit2 is an alias, both are contained in the same group
             elif match_alias2 == True and match_normal1 == True and norm_group1 == alias_group2:
-                unit2 = alias[norm_group1][unit2]
+                unit2 = alias[norm_group1][alias_case2]
+                
+                unit1 = norm_case1
+                unit2 = get_true_case(unit2, norm_group1, self.unit_conversion)
+                
                 doesMatch = True
                 group = norm_group1
-                #print "Case 3"
+                
             #Case 4: unit1 and unit2 are both aliases, and contained within the same group
             # or unit1 and unit2 do not exist within the same group or do not exist at all
             else:
-                doesMatch, group = matchGroup(unit1, unit2, alias)
-                #print "Case 4"
+                doesMatch, group, unit1_case, unit2_case = matchGroup(unit1, unit2, alias)
                 # At this point, we have traversed the dictionary a few times which is not very good
                 # Does anybody know a better way to do it?
                 if doesMatch:
-                    unit1 = alias[group][unit1]
-                    unit2 = alias[group][unit2]
+                    unit1 = alias[group][unit1_case]
+                    unit2 = alias[group][unit2_case]
+                    
+                    unit1 = get_true_case(unit1, group, self.unit_conversion)
+                    unit2 = get_true_case(unit2, group, self.unit_conversion)
                 else:
                     self.sendChatMessage(self.send, channel, "Incompatible or unknown units")
-                
+        else:
+            unit1 = alias_unit1
+            unit2 = alias_unit2
                 
         if doesMatch:
             if "." in num:
@@ -213,7 +244,7 @@ def execute(self, name, params, channel, userdata, rank):
                     return
                 else:
                     num = int(num)
-            print unit1, unit2
+                    
             base = self.unit_conversion[group][unit1] * num
             fin = (1.0/float(self.unit_conversion[group][unit2]))*base
             
