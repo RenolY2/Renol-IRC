@@ -83,8 +83,20 @@ def read_CurrencyRate(path):
     file.close()
     return invertRates(data["rates"])
 
-
-
+def updateDoge(BTC_USD_rate):
+    try:
+        website = "https://www.coins-e.com/api/v2/market/DOGE_BTC/depth/"
+        
+        opener = urllib2.urlopen(website, timeout = 15)
+        content = simplejson.loads(opener.read())
+        opener.close()
+        
+        return (float(content["ltp"])*BTC_USD_rate)
+    except Exception as error:
+        print "Error appeared", str(error)
+        return False
+        
+    
 def findGroup(item, conv):
     for group in conv:
         trueCase = get_true_case(item, group, conv)
@@ -121,6 +133,12 @@ def get_true_case(item, group, dataDict):
 try:
     conversion["currency"] = read_CurrencyRate(currency_path)
     alias["currency"] = {"euro" : "eur", "dollar" : "usd", "pound" : "gbp", "yen" : "jpy", "bitcoin" : "btc"}
+    
+    dogeRate = updateDoge(conversion["currency"]["BTC"])
+    if dogeRate != False: 
+        conversion["currency"]["DOGE"] = dogeRate
+        alias["currency"]["dogecoin"] = "doge"
+    
 except Exception as error:
     print "ERROR: "+str(error) 
     
@@ -135,6 +153,11 @@ except Exception as error:
     else:
         conversion["currency"] = result
         alias["currency"] = {"euro" : "eur", "dollar" : "usd", "pound" : "gbp", "yen" : "jpy", "bitcoin" : "btc"}
+        
+        dogeRate = updateDoge(conversion["currency"]["BTC"])
+        if dogeRate != False: 
+            conversion["currency"]["DOGE"] = dogeRate
+            alias["currency"]["dogecoin"] = "doge"
 
 def __initialize__(self, Startup):
     #if Startup == True:
@@ -147,6 +170,11 @@ def execute(self, name, params, channel, userdata, rank):
             self.sendChatMessage(self.send, channel, "Failed to update the currency exchange rates.")
         else:
             self.unit_conversion["currency"] = data
+            
+            dogeRate = updateDoge(conversion["currency"]["BTC"])
+            if dogeRate != False: 
+                self.unit_conversion["currency"]["DOGE"] = dogeRate
+                
             self.sendChatMessage(self.send, channel, "Updated currency exchange rates.")
             
     elif len(params) == 4 and params[2].lower() in words or len(params) == 3 and params[2].lower() not in words:
