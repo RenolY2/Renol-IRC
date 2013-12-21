@@ -162,6 +162,16 @@ except Exception as error:
 def __initialize__(self, Startup):
     #if Startup == True:
     self.unit_conversion = conversion
+    
+    entry = self.helper.newHelp(ID)
+    entry.addDescription("The 'convert' command allows you to convert various units sharing the same base unit into each other.")
+    entry.addArgument("number", "The amount of your original unit that should be converted.")
+    entry.addArgument("original unit", "The name of your original unit.")
+    entry.addArgument("to/in", "Syntactic sugar. Can be left out.", optional = True)
+    entry.addArgument("target unit", "The name of the unit to which the original unit should be converted.")
+    entry.rank = 0
+    
+    self.helper.registerHelp(entry, overwrite = True)
 
 def execute(self, name, params, channel, userdata, rank):
     if len(params) == 1 and params[0].lower() == "update" and rank == "@@":

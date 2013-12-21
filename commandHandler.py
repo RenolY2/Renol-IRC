@@ -4,6 +4,7 @@ import Queue
 import centralizedThreading
 from BotEvents import TimerEvent, MsgEvent
 from IRC_registration import trackVerification
+from CommandHelp import HelpModule
 
 
 class commandHandling():
@@ -32,6 +33,9 @@ class commandHandling():
         
         self.threading = centralizedThreading.ThreadPool()
         
+        self.helper = HelpModule()
+        
+        self.rankconvert = {"@@" : 3, "@" : 2, "+" : 1, "" : 0}
         
     def handle(self, send, prefix, command, params, auth, ):
         self.send = send
