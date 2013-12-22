@@ -20,7 +20,7 @@ def execute(self, name, params, channel, userdata, rank):
         
     elif len(params) == 1:
 
-        arglist = [self.cmdprefix+ID]
+        arglist = [self.cmdprefix+cmdname]
         
         for arg in help.arguments:
             argname = arg[0]
