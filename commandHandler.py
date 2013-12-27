@@ -1,5 +1,6 @@
 import imp, os
 import Queue
+from time import strftime
 
 import centralizedThreading
 from BotEvents import TimerEvent, MsgEvent
@@ -29,7 +30,7 @@ class commandHandling():
         
         self.latency = None
         
-        self.PacketsReceivedBeforeDeath = Queue.Queue(maxsize = 25)
+        self.PacketsReceivedBeforeDeath = Queue.Queue(maxsize = 50)
         
         self.threading = centralizedThreading.ThreadPool()
         
@@ -42,7 +43,7 @@ class commandHandling():
         
         ## In the next few lines I implement a basic logger so the logs can be put out when the bot dies.
         ## Should come in handy when looking at what or who caused trouble
-        ## There is room for 25 entries, number can be increased at a later point
+        ## There is room for 50 entries, number can be increased or lowered at a later point
         try:
             self.PacketsReceivedBeforeDeath.put("{0} {1} {2}".format(prefix, command, params), False)
         except Queue.Full:
@@ -74,6 +75,7 @@ class commandHandling():
                 return chan
         return False
     
+    # A wrapper for sendChatMessage that does not require a send argument.
     def sendMessage(self, channel, msg, msgsplitter = None, splitAt = " "):
         self.sendChatMessage(self.send, channel, msg, msgsplitter, splitAt)
     
@@ -92,7 +94,7 @@ class commandHandling():
         # otherwise, the default one, i.e. self.defaultsplitter, is used
         if msgsplitter == None:
             msgsplitter = self.defaultsplitter
-                                                      #PRIVMSG
+                                                    #PRIVMSG
         prefixLen = len(self.name) + len(self.ident) + 63 + 7 + len(channel) + 25
         remaining = 512-prefixLen
         #print remaining
@@ -107,7 +109,8 @@ class commandHandling():
     
     def sendNotice(self, destination, msg, msgsplitter = None, splitAt = " "):
         # Works the same as sendChatMessage
-        # Only difference is that this message is sent as a NOTICE
+        # Only difference is that this message is sent as a NOTICE,
+        # and it does not require a send parameter.
         if msgsplitter == None:
             msgsplitter = self.defaultsplitter
                                                             #NOTICE
@@ -158,6 +161,28 @@ class commandHandling():
                 
         return items
     
+    
+    # writeQueue adds a specified string to the internal queue of the bot.
+    # This functions handles marking the string with a DebugEntry prefix and the time
+    # at which the entry was added. You can also specify a name that will be added to
+    # the entry so that you can identify which module or command has created the entry.
+    #
+    # This is a stopgap measure and not a replacement for a true logging feature, but it 
+    # should help pin down errors much more effectively than with print because the queue 
+    # is written to the exception.txt on a crash and Python Tracebacks don't hold enough 
+    # runtime information to research every issue.
+    #
+    # Please note that at the time of this writing the queue can hold a maximum of 50 entries.
+    # Adding new entries will kick the oldest entries out of the queue, so you should be 
+    # conservative with the usage of writeQueue.
+    def writeQueue(self, string, modulename = "no_name_given"):
+        entryString = "DebugEntry at {0} [{1!r}]: {2!r}".format(strftime("%H:%M:%S (%z)"), modulename, string)
+        try:
+            self.PacketsReceivedBeforeDeath.put(entryString, False)
+        except Queue.Full:
+            self.PacketsReceivedBeforeDeath.get(block = False)
+            self.PacketsReceivedBeforeDeath.put(entryString, False)
+    
     def joinChannel(self, send, channel):
         if isinstance(channel, str):
             if channel not in self.channelData:
@@ -203,6 +228,7 @@ class commandHandling():
         Packet = {}
         for i in ModuleList:
             module = imp.load_source(i[0:-2], path+"/"+i)
+            #print i
             Packet[module.ID] = (module, path+"/"+i)
             
             try:
