@@ -31,6 +31,12 @@ class LoggingModule():
         self.__log_logger__ = logging.getLogger("LoggingModule")
         self.__log_logger__.info("IRC Bot Logging Interface initialised.")
         
+        offset, tzname = self.local_time_offset()
+        if offset >= 0: offset = "+"+str(offset)
+        else: offset = str(offset)
+        
+        self.__log_logger__.info("All time stamps are in UTC%s (%s)", offset, tzname)
+        
     def __create_directory__(self, dirpath):
         if not os.path.exists(dirpath):
             os.mkdir(dirpath)
@@ -80,4 +86,21 @@ class LoggingModule():
             
             
             self.__log_logger__.info("Logfile Handler switched. Continuing writing to new file. Old date: %s, new date: %s", self.date, newDate)
+            
+            offset, tzname = self.local_time_offset()
+            if offset >= 0: offset = "+"+str(offset)
+            else: offset = str(offset)
+            
+            self.__log_logger__.info("All time stamps are in UTC%s (%s)", offset, tzname)
             self.date = newDate
+            
+    # Returns UTC offset and name of time zone at current time
+    # Based on http://stackoverflow.com/a/13406277
+    # Thanks a lot, marr75!
+    def local_time_offset(self):
+        t = time.time()
+    
+        if time.localtime(t).tm_isdst and time.daylight:
+            return -time.altzone/3600, time.tzname[1]
+        else:
+            return -time.timezone/3600, time.tzname[0]
