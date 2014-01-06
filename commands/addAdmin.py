@@ -1,3 +1,5 @@
+import logging
+
 ID = "addop"
 permission = 3
 
@@ -8,7 +10,7 @@ def notInList(user, userlist):
     
     return True
 
-def execute(self, name, params, channel, userdata, rank):
+def execute(self, username, params, channel, userdata, rank):
     names = params
     
     for name in names:
@@ -16,5 +18,6 @@ def execute(self, name, params, channel, userdata, rank):
             self.bot_userlist.append(name)
             self.Bot_Auth.addUser(name)
             self.whoisUser(name)
-    
+            
+    logging.info("User '%s' has added user(s) '%s'", username, ", ".join(names))
     self.sendChatMessage(self.send, channel, "Added "+", ".join(names))

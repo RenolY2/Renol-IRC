@@ -1,6 +1,7 @@
-### BotEvents.py will contain various kinds of Event Handlers 
-### For the moment, the events are limited to Timer events
+### BotEvents.py contains various kinds of Event Handlers 
+### For the moment, only Timer and Message events are used
 import time
+import logging
 
 class EventAlreadyExists(Exception):
     def __init__(self, eventName):
@@ -20,9 +21,17 @@ class StandardEvent():
         self.__events__ = {}
         self.operationQueue = []
         self.comes_from_event = False
+        self.__event_log__ = logging.getLogger("Event")
         
 # New to addEvent: channel needs to be a list containing at least one channel name as string    
+# from_event is a deprecated variable and exists only for backwards compatibility
+
     def addEvent(self, name, function, channel = False, from_event = False):
+        if self.comes_from_event == False:
+            self.__event_log__.debug("Adding event '%s' for channels '%s'", name, channel)
+        else:
+            self.__event_log__.debug("Adding event '%s' for channels '%s'; Used from inside an event", name, channel)
+            
         if not callable(function):
             raise TypeError(str(function)+ " is not a callable function!")
         elif name in self.__events__:
@@ -64,6 +73,11 @@ class StandardEvent():
                     raise RuntimeError("Whaaat?!? It is neither add nor del? EXCEPTION")
     
     def removeEvent(self, event, from_event = False):
+        if self.comes_from_event == False:
+            self.__event_log__.debug("Removing event '%s'", event)
+        else:
+            self.__event_log__.debug("Removing event '%s'; Used from inside an event", event)
+            
         if event in self.__events__:
             if self.comes_from_event == False:
                 del self.__events__[event]
@@ -79,6 +93,7 @@ class StandardEvent():
             return False
     
     def addChannel(self, eventName, channel):
+        self.__event_log__.debug("Adding channels '%s' to event '%s'", channel, eventName)
         if eventName not in self.__events__:
             raise KeyError(str(eventName)+" does not exist!")
         else:
@@ -90,6 +105,7 @@ class StandardEvent():
                 raise ChannelAlreadyExists(channel)
             
     def removeChannel(self, eventName, channel):
+        self.__event_log__.debug("Removing channel '%s' from event '%s'", channel, eventName)
         if eventName not in self.__events__:
             raise KeyError(str(eventName)+" does not exist!")
         else:
@@ -110,6 +126,11 @@ class StandardEvent():
         
 class TimerEvent(StandardEvent):
     def addEvent(self, name, interval, function, channel = False, from_event = False):
+        if self.comes_from_event == False:
+            self.__event_log__.debug("Adding time event '%s' for channels '%s' with interval = %s second(s)", name, channel, interval)
+        else:
+            self.__event_log__.debug("Adding time event '%s' for channels '%s' with interval = %s second(s); Used from inside an event", name, channel, interval)
+        
         if not isinstance(interval, (int, float)):
             raise TypeError(str(interval)+ " is not an integer/float!")
         elif time < 0:

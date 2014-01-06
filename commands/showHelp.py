@@ -1,5 +1,9 @@
+import logging
+
 ID = "help"
 permission = 0
+
+help_log = logging.getLogger("HelpModule")
 
 def execute(self, name, params, channel, userdata, rank):
     if len(params) > 0:
@@ -10,16 +14,20 @@ def execute(self, name, params, channel, userdata, rank):
             print str(error)
             self.sendNotice(name, "No such command exists.")
             return
+    else:
+        self.sendNotice(name, "Specify a command you want to know more about.")
+        return
     
     if self.rankconvert[rank] < help.rank:
         self.sendNotice(name, "Command is restricted.")
+        help_log.debug("Looking up command '%s', but it is restricted.", name, cmdname)
         return
     
     if help.custom_handler != None:
         help.__run_custom_handler__(self, name, params, channel, userdata, rank)
         
     elif len(params) == 1:
-
+        help_log.debug("Looking up command '%s'", name, cmdname)
         arglist = [self.cmdprefix+cmdname]
         
         for arg in help.arguments:
@@ -50,6 +58,8 @@ def execute(self, name, params, channel, userdata, rank):
         argname = " ".join(params[1:])
         
         found = False
+        
+        help_log.debug("Looking up argument '%s' for command '%s'", argname, cmdname)
         
         for arg in help.arguments:
             if argname.lower() == arg[0].lower():

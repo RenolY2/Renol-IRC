@@ -1,6 +1,8 @@
 import threading
 import multiprocessing
 import traceback
+import logging
+
 
 class FunctionNameAlreadyExists(Exception):
     def __init__(self, eventName):
@@ -34,7 +36,8 @@ class ThreadTemplate(threading.Thread):
 class ThreadPool():
     def __init__(self):
         self.pool = {}
-    
+        self.__threadPool_log__ = logging.getLogger("ThreadPool")
+        
     def addThread(self, name, function):
         toMain, toThread = multiprocessing.Pipe(True)#, multiprocessing.Pipe(True) 
         
@@ -44,7 +47,7 @@ class ThreadPool():
         thread = ThreadTemplate(name, function, toThread, toMain)
         self.pool[name] = {"thread" : thread, "read" : toMain, "write" : toThread}
         self.pool[name]["thread"].start()
-        
+        self.__threadPool_log__.debug("New thread '%s' started", name)
         #return toMain, toThread
     
     def sigquitThread(self, name):
@@ -62,10 +65,13 @@ class ThreadPool():
         
     
     def sigquitAll(self):
+        self.__threadPool_log__.debug("Sending SIGKILL to all running threads")
         threads = [name for name in self.pool]
         
         for thread in threads:
             self.pool[thread]["thread"].signal = True
             del self.pool[thread]
+        
+        self.__threadPool_log__.debug("SIGKILL to all running threads sent")
         
         

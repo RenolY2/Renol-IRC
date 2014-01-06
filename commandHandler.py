@@ -1,15 +1,21 @@
 import imp, os
 import Queue
+import logging
 from time import strftime
 
 import centralizedThreading
 from BotEvents import TimerEvent, MsgEvent
 from IRC_registration import trackVerification
 from CommandHelp import HelpModule
+from IRCLogging import LoggingModule
 
 
 class commandHandling():
-    def __init__(self, channels, cmdprefix, name, ident, adminlist):
+    def __init__(self, channels, cmdprefix, name, ident, adminlist, loglevel):
+        
+        self.LoggingModule = LoggingModule(loglevel)
+        self.__CMDHandler_log__ = logging.getLogger("CMDHandler")
+        
         self.name = name
         self.ident = ident
         self.Plugin = self.__LoadModules__("IRCpackets")
@@ -26,6 +32,8 @@ class commandHandling():
         self.cmdprefix = cmdprefix
         
         self.events = {"time" : TimerEvent(), "chat" : MsgEvent()}
+        self.events["time"].addEvent("LogfileSwitch", 60, self.LoggingModule.__switch_filehandle_daily__)
+        
         self.server = None
         
         self.latency = None
@@ -37,6 +45,8 @@ class commandHandling():
         self.helper = HelpModule()
         
         self.rankconvert = {"@@" : 3, "@" : 2, "+" : 1, "" : 0}
+        
+        
         
     def handle(self, send, prefix, command, params, auth, ):
         self.send = send
@@ -55,10 +65,17 @@ class commandHandling():
             self.auth = auth
         
         try:
-            self.Plugin[command][0].execute(self, send, prefix, command, params)
+            if command in self.Plugin:
+                self.Plugin[command][0].execute(self, send, prefix, command, params)
+            else:
+                # 0 is the lowest possible log level. Messages about unimplemented packets are
+                # very common, so they will clutter up the file even if logging is set to DEBUG
+                self.__CMDHandler_log__.log(0, "Unimplemented Packet: %s", command)
         except KeyError as error:
             #print "Unknown command '"+command+"'"
-            print "Unimplemented Packet or missing channel: "+str(error)
+            self.__CMDHandler_log__.exception("Missing channel or other KeyError caught")
+            print "Missing channel or other KeyError caught: "+str(error)
+            
     
     def timeEventChecker(self):
         self.events["time"].tryAllEvents(self)
@@ -101,12 +118,15 @@ class commandHandling():
         
         if len(msg)+prefixLen > 512:
             msgpart = msgsplitter(msg, remaining, splitAt)
+            self.__CMDHandler_log__.debug("Breaking message %s into parts %s", msg, msgpart)
             
             for part in msgpart:
                 send("PRIVMSG "+str(channel)+" :"+str(part), 5)
+                self.__CMDHandler_log__.debug("Sending parted message to channel/user %s: '%s'", channel, msg)
         else:
             send("PRIVMSG "+str(channel)+" :"+str(msg), 5)
-    
+            self.__CMDHandler_log__.debug("Sending to channel/user %s: '%s'", channel, msg)
+            
     def sendNotice(self, destination, msg, msgsplitter = None, splitAt = " "):
         # Works the same as sendChatMessage
         # Only difference is that this message is sent as a NOTICE,
@@ -120,11 +140,14 @@ class commandHandling():
         
         if len(msg)+prefixLen > 512:
             msgpart = msgsplitter(msg, remaining, splitAt)
+            self.__CMDHandler_log__.debug("Breaking message %s into parts %s", msg, msgpart)
             
             for part in msgpart:
                 self.send("NOTICE "+str(destination)+" :"+str(part))
+                self.__CMDHandler_log__.debug("Sending parted notice to channel/user %s: '%s'", destination, msg)
         else:
             self.send("NOTICE "+str(destination)+" :"+str(msg))
+            self.__CMDHandler_log__.debug("Sending notice to channel/user %s: '%s'", destination, msg)
         
     def defaultsplitter(self, msg, length, splitAt):
         
@@ -177,6 +200,7 @@ class commandHandling():
     # conservative with the usage of writeQueue.
     def writeQueue(self, string, modulename = "no_name_given"):
         entryString = "DebugEntry at {0} [{1!r}]: {2!r}".format(strftime("%H:%M:%S (%z)"), modulename, string)
+        self.__CMDHandler_log__.debug("Added DebugEntry: '%s'", entryString)
         try:
             self.PacketsReceivedBeforeDeath.put(entryString, False)
         except Queue.Full:
@@ -188,35 +212,42 @@ class commandHandling():
             if channel not in self.channelData:
                 #self.channels.append(channel)
                 self.channelData[channel] = {"Userlist" : [], "Topic" : "", "Mode" : ""}
-                
             send("JOIN "+channel, 5)
+            self.__CMDHandler_log__.info("Joining channel: '%s'", channel)
+            
         elif isinstance(channel, list):
             for chan in channel:
                 if chan not in self.channelData:
                     #self.channels.append(channel)
                     self.channelData[chan] = {"Userlist" : [], "Topic" : "", "Mode" : ""}
+                    
             send("JOIN "+",".join(channel), 3)
+            self.__CMDHandler_log__.info("Joining several channels: '%s'", channel)
         else:
+            self.__CMDHandler_log__.error("Trying to join a channel, but channel is not list or string: %s [%s]", channel, type(channel))
             raise TypeError
         print self.channelData
     
     def whoisUser(self, user):
         self.send("WHOIS {0}".format(user))
         self.Bot_Auth.queueUser(user)
+        self.__CMDHandler_log__.debug("Sending WHOIS for user '%s'", user)
     
     def userInSight(self, user):
         print self.channelData
+        self.__CMDHandler_log__.debug("Checking if user '%s' is in the following channels: %s", self.channelData.keys())
         for channel in self.channelData:
             for userD in self.channelData[channel]["Userlist"]:
                 if user == userD[0]:
                     return True
-                
-        
+                    self.__CMDHandler_log__.debug("Yes, he is (at least) in channel '%s'", channel)
         return False
+        self.__CMDHandler_log__.debug("No, user is out of sight.")
     
     def __ListDir__(self, dir):
         files = os.listdir(dir)
         newlist = []
+        self.__CMDHandler_log__.debug("Listing files in directory '%s'", dir)
         for i in files:
             if ".pyc" not in i and "__init__" not in i and "conflicted copy" not in i and ".py" in i:
                 newlist.append(i)
@@ -225,8 +256,10 @@ class commandHandling():
     
     def __LoadModules__(self,path):     
         ModuleList = self.__ListDir__(path)
+        self.__CMDHandler_log__.info("Loading modules in path '%s'...", path)
         Packet = {}
         for i in ModuleList:
+            self.__CMDHandler_log__.debug("Loading file %s in path '%s'", i, path)
             module = imp.load_source(i[0:-2], path+"/"+i)
             #print i
             Packet[module.ID] = (module, path+"/"+i)
@@ -234,12 +267,18 @@ class commandHandling():
             try:
                 if not callable(module.__initialize__):
                     module.__initialize__ = False
+                    self.__CMDHandler_log__.debug("File %s does not use an initialize function", i)
             except AttributeError:
                 module.__initialize__ = False
+                self.__CMDHandler_log__.debug("File %s does not use an initialize function", i)
+            
                 
             Packet[module.ID] = (module, path+"/"+i)
             #Packet[i[1].lower()].PATH = path + "/"+i[2]
             #self.Packet[i[1]] = self.Packet[i[1]].EXEC()
         
         print "ALL MODULES LOADED"   
+        self.__CMDHandler_log__.info("Modules in path '%s' loaded.", path)
         return Packet
+    
+    

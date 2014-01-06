@@ -1,3 +1,5 @@
+import logging
+
 ID = "remop"
 permission = 3
 
@@ -25,6 +27,7 @@ def execute(self, username, params, channel, userdata, rank):
             notremoved.append(name)
     
     if len(removed) > 0:
+        logging.info("User '%s' has removed user(s) '%s'", username, ", ".join(removed))
         self.sendChatMessage(self.send, channel, "Removed "+", ".join(removed))
     if len(notremoved) > 0:
         self.sendChatMessage(self.send, channel, "Didn't remove "+", ".join(notremoved))
