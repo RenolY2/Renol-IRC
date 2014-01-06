@@ -10,7 +10,7 @@ class invalidConfig(Exception):
 class Configuration():
     def __init__(self):
         self.config = {}
-        self.template = ["server", "port", "usernick", "pass", "ident", "channels", "prefix", "admins"]
+        self.template = ["server", "port", "usernick", "pass", "ident", "channels", "prefix", "admins", "loglevel"]
         self.configname = "config.txt"
         
         self.found = []
@@ -84,5 +84,5 @@ class Configuration():
         for admin in admins:
             admin = admin.strip()
             newadmins.append(admin)
-        
-        return admins
+            
+        return newadmins
