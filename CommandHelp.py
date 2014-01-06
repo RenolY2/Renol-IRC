@@ -74,6 +74,10 @@ def __initialize__(self, Startup):
     
 """
 
+import logging
+
+help_log = logging.getLogger("HelpModule")
+
 class HelpEntity():
     def __init__(self, cmdname):
         self.cmdname = cmdname
@@ -85,6 +89,7 @@ class HelpEntity():
         self.rank = 0
     
         self.custom_handler = None
+        help_log.debug("HelpEntry for '%s' initialized", cmdname)
         
     def addDescription(self, description):
         if isinstance(description, basestring):
@@ -113,16 +118,21 @@ class HelpEntity():
             self.custom_handler = func
     
     def __run_custom_handler__(self, bot_self, *args):
+        help_log.debug("Using custom handler for command '%s'", self.cmdname)
         self.custom_handler(bot_self, *args)
         
 class HelpModule():
     def __init__(self):
         self.helpDB = {}
-    
+        help_log.info("HelpModule Database initialized")
+        
     def newHelp(self, cmdname):
+        help_log.debug("New HelpEntity for '%s' initialized", cmdname)
         return HelpEntity(cmdname)
+        
     
     def registerHelp(self, helpObject, overwrite = False):
+        
         if not isinstance(helpObject, HelpEntity):
             raise TypeError("Invalid Object provided: '{0}' (type: {1})".format(helpObject, type(helpObject)))
         elif helpObject.cmdname in self.helpDB and overwrite == False:
@@ -130,11 +140,15 @@ class HelpModule():
         elif helpObject.cmdname in self.helpDB and overwrite == True:
             print "ATTENTION: A command with such a name is already registered."
             self.helpDB[helpObject.cmdname] = helpObject
+            help_log.debug("Registered Help for command '%s', but a help entry already exists.", helpObject.cmdname)
         else:
             self.helpDB[helpObject.cmdname] = helpObject
-    
+            
+        help_log.debug("Registered Help for command '%s'", helpObject.cmdname)
+        
     def unregisterHelp(self, cmdname):
         del self.helpDB[cmdname]
+        help_log.debug("Deleted Help for command '%s'", cmdname)
         
     
     def getCmdHelp(self, cmdname):
