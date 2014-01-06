@@ -94,7 +94,7 @@ class IRC_writer(threading.Thread):
                 #print "SENT: "+toSend
                 
             except Queue.Empty:
-                # an attemt to fix the bug that causes the writeThread to hang indifinitely because it receives no more data from the Queue
+                # an attempt to fix the bug that causes the writeThread to hang indefinitely because it receives no more data from the Queue
                 if self.signal == False:
                     # it's empty? oh well, better luck next time
                     time.sleep(0.05) 
