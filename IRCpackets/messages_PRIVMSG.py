@@ -1,6 +1,8 @@
-
+import logging
 
 ID = "PRIVMSG"
+
+msg_log = logging.getLogger("PRIVMSG")
 
 def execute(self, sendMsg, msgprefix, command, params):
     #print params, prefix
@@ -17,13 +19,15 @@ def execute(self, sendMsg, msgprefix, command, params):
     
     channel = splitted[0]
     chatMessage = splitted[1][1:]
+    
     if channel[0] not in "#&":
         channel = name
-        chan = False
+        is_channel = False
         perms = ""
         print "HELP I'M GETTING PRIVMSGD BY ",name," : ",chatMessage
+        msg_log.info("Private message from '%s' [%s@%s]: %s", name, indent, host, chatMessage)
     else: 
-        chan = True
+        is_channel = True
         channel = self.retrieveTrueCase(channel)
         perms = self.userGetRank(channel, name)
         
@@ -74,10 +78,22 @@ def execute(self, sendMsg, msgprefix, command, params):
             
         try:
             if rank >= self.commands[chatCmd][0].permission:
+                if is_channel == True:
+                    msg_log.info("User '%s' uses command '%s' in channel '%s'", 
+                                 name , chatCmd, channel)
+                    msg_log.debug("User info for '%s': [%s@%s] Used parameters: %s Rank: %s", 
+                                  name, indent, host, chatParams[1:], perms)
+                else:
+                    msg_log.info("User '%s' uses command '%s'", name , chatCmd)
+                    msg_log.debug("User info for '%s': [%s@%s] Used parameters: %s Rank: %s", 
+                                  name, indent, host, chatParams[1:], perms)
+                    msg_log.debug("User '%s' - destination: '%s' (should be the same)", name, channel)
+                    
                 if support == True:
-                    self.commands[chatCmd][0].execute(self, name, chatParams[1:], channel, (indent, host), perms, chan)
-                elif support == False and chan == True:
+                    self.commands[chatCmd][0].execute(self, name, chatParams[1:], channel, (indent, host), perms, is_channel)
+                elif support == False and is_channel == True:
                     self.commands[chatCmd][0].execute(self, name, chatParams[1:], channel, (indent, host), perms)
+                    
         except KeyError as error:
             print "KeyError for command: "+str(error)
         except AttributeError as error:
@@ -85,29 +101,11 @@ def execute(self, sendMsg, msgprefix, command, params):
     else:
         # if the message comes from a user, set channel to False
         # otherwise, set channel to the channel from which the message was received
-        channel = chan == True and channel or False
+        channel = is_channel == True and channel or False
+        
+        if channel == False: 
+            msg_log.debug("Passing a PM from user '%s' [%s@%s] to chat events: '%s'", name, indent, host, chatMessage)
+        
         self.events["chat"].tryAllEvents(self, {"name" : name, "ident" : indent, "host" : host}, chatMessage, channel)
-    
-    #if "heyman" in chatMessage.lower():
-    #    sendMsg("PRIVMSG "+channel+" :"+"Hey! :D",5)
-    #elif "hallo" in chatMessage.lower():
-    #    sendMsg("PRIVMSG "+channel+" :"+"Hi! :D",5)
-    #            
-    #if usedPrfx == cmdprefix:
-    #
-    #    if name == "Yoshi2" and chatCmd == "hardreload" :
-    #        sendMsg("PRIVMSG "+channel+" :"+"Reloading...",2)
-    #        self.Plugin = self.__LoadModules__("IRCpackets")
-    #        sendMsg("PRIVMSG "+channel+" :"+"Reloaded! ;)",2)
-    #    elif chatCmd == "say":
-    #        sendMsg("PRIVMSG "+channel+" :"+" ".join(chatParams[1:]),3)
-    #    elif (name == "SinZ" or name == "Yoshi2") and chatCmd == "raw":
-    #        sendMsg(" ".join(chatParams[1:]), 4)
-    #    elif chatCmd == "userlist":
-    #        self.sendChatMessage(sendMsg, channel, "0123")
-    #        print self.channelData
-    #        self.sendChatMessage(sendMsg, channel, str(self.channelData[channel]["Userlist"]))
-    #    elif chatCmd == "rank":
-    #        self.sendChatMessage(sendMsg, channel, "You "+{"@" : "are OP", "+" : "are voiced", "" : "do not have a special rank"}[self.userGetRank(channel, name)])
             
             
