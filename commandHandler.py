@@ -267,10 +267,10 @@ class commandHandling():
             try:
                 if not callable(module.__initialize__):
                     module.__initialize__ = False
-                    self.__CMDHandler_log__.debug("File %s does not use an initialize function", i)
+                    self.__CMDHandler_log__.log(0, "File %s does not use an initialize function", i)
             except AttributeError:
                 module.__initialize__ = False
-                self.__CMDHandler_log__.debug("File %s does not use an initialize function", i)
+                self.__CMDHandler_log__.log(0, "File %s does not use an initialize function", i)
             
                 
             Packet[module.ID] = (module, path+"/"+i)
