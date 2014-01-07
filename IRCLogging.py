@@ -28,6 +28,16 @@ class LoggingModule():
         logging.basicConfig(filename="BotLogs/{0}/{1}.log".format(monthfoldername, dayfilename),level=self.logLevel,
                             format='%(asctime)s [%(levelname)s] --[%(name)s:%(module)s/%(funcName)s]-- %(message)s', datefmt='%H:%M:%S')
         
+        ## We create a console handler and configure it
+        consoleHandler = logging.StreamHandler()
+        consoleHandler.setLevel(self.logLevel)
+        
+        format = logging.Formatter('%(asctime)s  [%(levelname)s] --[%(name)s:%(module)s/%(funcName)s]-- %(message)s', datefmt='%H:%M:%S')
+        consoleHandler.setFormatter(format)
+        
+        logging.getLogger().addHandler(consoleHandler)
+        ## console handler configured, we should be good to go
+        
         self.__log_logger__ = logging.getLogger("LoggingModule")
         self.__log_logger__.info("IRC Bot Logging Interface initialised.")
         
@@ -37,6 +47,8 @@ class LoggingModule():
         
         self.__log_logger__.info("All time stamps are in UTC%s (%s)", offset, tzname)
         
+        
+        self.num = 0
     def __create_directory__(self, dirpath):
         if not os.path.exists(dirpath):
             os.mkdir(dirpath)
@@ -49,7 +61,6 @@ class LoggingModule():
     
     def __switch_filehandle_daily__(self, *args):
         newDate = datetime.date.today()
-        print "ok"
         
         if self.date < newDate:
             
@@ -68,6 +79,7 @@ class LoggingModule():
             #
             # POTENTIAL BUG: is handlers[0] always the file handler pointing to the log file?
             # Should be tested with more than one handler.
+            print logging.getLogger().handlers
             logging.getLogger().handlers[0].stream.close()
             logging.getLogger().removeHandler(logging.getLogger().handlers[0])
             
@@ -79,11 +91,11 @@ class LoggingModule():
             newfile_handler = logging.FileHandler(filename)
             newfile_handler.setLevel = self.logLevel
             
-            format = logging.Formatter('%(asctime)s --[%(name)s:%(module)s/%(funcName)s]-- [%(levelname)s] %(message)s', datefmt='%H:%M:%S')
-            newfile_handler.setFormatter(format)
+            msgformat = logging.Formatter('%(asctime)s  [%(levelname)s] --[%(name)s:%(module)s/%(funcName)s]-- %(message)s', datefmt='%H:%M:%S')
+            newfile_handler.setFormatter(msgformat)
             
-            logging.getLogger().addHandler(newfile_handler)
-            
+            #logging.getLogger().addHandler(newfile_handler)
+            self.__prependHandler__(logging.getLogger(), newfile_handler)
             
             self.__log_logger__.info("Logfile Handler switched. Continuing writing to new file. Old date: %s, new date: %s", self.date, newDate)
             
@@ -104,3 +116,16 @@ class LoggingModule():
             return -time.altzone/3600, time.tzname[1]
         else:
             return -time.timezone/3600, time.tzname[0]
+    
+    
+    # Modification of logging's appendHandler function
+    # It will add the handler to the front of the handler list
+    # It is a bit of a hack, but it is required for making sure 
+    # that the main file handler is added to the front of the list 
+    def __prependHandler__(self, logger,  hdlr):
+        logging._acquireLock()
+        try:
+            if not (hdlr in logger.handlers):
+                logger.handlers.insert(0, hdlr)
+        finally:
+            logging._releaseLock()
