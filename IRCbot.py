@@ -181,3 +181,4 @@ except Exception as error:
     bot.writeThread.signal = True
     #raise error
 bot.__root_logger__.info("End of Session\n\n\n\n")
+logging.shutdown()
