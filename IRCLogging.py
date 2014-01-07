@@ -26,7 +26,7 @@ class LoggingModule():
         self.__create_directory__("BotLogs/{0}".format(monthfoldername))
         
         logging.basicConfig(filename="BotLogs/{0}/{1}.log".format(monthfoldername, dayfilename),level=self.logLevel,
-                            format='%(asctime)s --[%(name)s:%(module)s/%(funcName)s]-- [%(levelname)s] %(message)s', datefmt='%H:%M:%S')
+                            format='%(asctime)s [%(levelname)s] --[%(name)s:%(module)s/%(funcName)s]-- %(message)s', datefmt='%H:%M:%S')
         
         self.__log_logger__ = logging.getLogger("LoggingModule")
         self.__log_logger__.info("IRC Bot Logging Interface initialised.")
