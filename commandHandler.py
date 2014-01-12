@@ -101,7 +101,8 @@ class commandHandling():
         # if this bot sent a message.
         # Private messages from the server look like this:
         # nick!user@hostname PRIVMSG target :Hello World!
-        # For the purpose of this bot, nick and user are the same, and target is the channel 
+        # Nick is the username of the bot, user is the identification name of the bot and can be
+        # different from the nick, it will prefix the hostname. target is the channel 
         # to which we send the message. At the end, we add a constant (25) to the length to account
         # for whitespaces and other characters and eventual oddities. 
         # The Hostname will be limited to 63, regardless of the actual length.
@@ -185,19 +186,21 @@ class commandHandling():
         return items
     
     
-    # writeQueue adds a specified string to the internal queue of the bot.
-    # This functions handles marking the string with a DebugEntry prefix and the time
-    # at which the entry was added. You can also specify a name that will be added to
-    # the entry so that you can identify which module or command has created the entry.
-    #
-    # This is a stopgap measure and not a replacement for a true logging feature, but it 
-    # should help pin down errors much more effectively than with print because the queue 
-    # is written to the exception.txt on a crash and Python Tracebacks don't hold enough 
-    # runtime information to research every issue.
-    #
-    # Please note that at the time of this writing the queue can hold a maximum of 50 entries.
-    # Adding new entries will kick the oldest entries out of the queue, so you should be 
-    # conservative with the usage of writeQueue.
+    
+    ## writeQueue adds a specified string to the internal queue of the bot.
+    ## This functions handles marking the string with a DebugEntry prefix and the time
+    ## at which the entry was added. You can also specify a name that will be added to
+    ## the entry so that you can identify which module or command has created the entry.
+    ##
+    ##
+    ## Please note that at the time of this writing the queue can hold a maximum of 50 entries.
+    ## Adding new entries will kick the oldest entries out of the queue, so you should be 
+    ## conservative with the usage of writeQueue.
+    # UPDATE: writeQueue is now deprecated, please use Python's logging module.
+    # The logging module allows you to have seperate info and debug messages which will
+    # be written automatically into log files. These are not limited to an arbitrary 
+    # number and will (should) not disappear on repeated crashes. Read up on how to use the logging module.
+    # writeQueue messages will be written to the log files for the sake of improved compatibility
     def writeQueue(self, string, modulename = "no_name_given"):
         entryString = "DebugEntry at {0} [{1!r}]: {2!r}".format(strftime("%H:%M:%S (%z)"), modulename, string)
         self.__CMDHandler_log__.debug("Added DebugEntry: '%s'", entryString)
