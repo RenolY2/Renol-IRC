@@ -18,7 +18,7 @@ conversion = {  "distance":{"m" : 1.0, "ft" : 0.3048, "km" : 1000, "mi" : 1609.3
                 "time":{"sec" : 1, "min" : 60, "h" : 60*60, "day" :24*60*60, "year": 24*60*60*365},
                 "speed":{},
                 "pressure":{},
-                "temperature" : {"c" : 1, "f" : (1/1.8, -32), "k" : (1, -273.15)},
+                "temperature" : {"c" : 1, "f" : (1/1.8, -32), "k" : (1, -273.15), "r" : (1/1.8, +491.67)},
                 "compstorage" : {   "bit" : 1, "byte" : 8, "Kbit" : 10**3, "Mbit" : 10**6, "Gbit" : 10**9, "Tbit" : 10**12, "Pbit" : 10**15,
                                     "KB" : 8*(10**3), "MB" : 8*(10**6), "GB" : 8*(10**9), "TB" : 8*(10**12), "PB": 8*(10**15),
                                     "KiB" : 8*(2**10),"MiB" : 8*(2**20), "GiB" : 8*(2**30), "TiB" : 8*(2**40), "PiB" : 8*(2**50)}
@@ -34,7 +34,7 @@ alias = {"distance" : {"meter" : "m", "feet" : "ft", "mile" :"mi", "inch" : "in"
          "time" : {"second" : "sec", "minute" : "min", "hour" : "h"},
          "speed" : {},
          "pressure" : {},
-         "temperature" : {"celsius" : "c", "fahrenheit" : "f", "kelvin" : "k"},
+         "temperature" : {"celsius" : "c", "fahrenheit" : "f", "kelvin" : "k", "rankine" : "r"},
          "compstorage" : {"bytes" : "byte", "bits" : "bit"}
          
          }
