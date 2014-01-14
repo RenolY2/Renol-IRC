@@ -18,6 +18,7 @@ conversion = {  "distance":{"m" : 1.0, "ft" : 0.3048, "km" : 1000, "mi" : 1609.3
                 "time":{"sec" : 1, "min" : 60, "h" : 60*60, "day" :24*60*60, "year": 24*60*60*365},
                 "speed":{},
                 "pressure":{},
+                "temperature" : {"c" : 1, "f" : (1/1.8, -32), "k" : (1, -273.15)},
                 "compstorage" : {   "bit" : 1, "byte" : 8, "Kbit" : 10**3, "Mbit" : 10**6, "Gbit" : 10**9, "Tbit" : 10**12, "Pbit" : 10**15,
                                     "KB" : 8*(10**3), "MB" : 8*(10**6), "GB" : 8*(10**9), "TB" : 8*(10**12), "PB": 8*(10**15),
                                     "KiB" : 8*(2**10),"MiB" : 8*(2**20), "GiB" : 8*(2**30), "TiB" : 8*(2**40), "PiB" : 8*(2**50)}
@@ -33,6 +34,7 @@ alias = {"distance" : {"meter" : "m", "feet" : "ft", "mile" :"mi", "inch" : "in"
          "time" : {"second" : "sec", "minute" : "min", "hour" : "h"},
          "speed" : {},
          "pressure" : {},
+         "temperature" : {"celsius" : "c", "fahrenheit" : "f", "kelvin" : "k"},
          "compstorage" : {"bytes" : "byte", "bits" : "bit"}
          
          }
@@ -132,7 +134,7 @@ def get_true_case(item, group, dataDict):
 # the fall back data is slightly less accurate and needs to be kept up to date manually.
 try:
     conversion["currency"] = read_CurrencyRate(currency_path)
-    alias["currency"] = {"euro" : "eur", "dollar" : "usd", "pound" : "gbp", "yen" : "jpy", "bitcoin" : "btc"}
+    alias["currency"] = {"euro" : "eur", "dollar" : "usd", "pound" : "gbp", "yen" : "jpy", "bitcoin" : "btc", "zloty" : "pln"}
     
     dogeRate = updateDoge(conversion["currency"]["BTC"])
     if dogeRate != False: 
@@ -282,9 +284,18 @@ def execute(self, name, params, channel, userdata, rank):
                     return
                 else:
                     num = int(num)
-                    
-            base = self.unit_conversion[group][unit1] * num
-            fin = (1.0/float(self.unit_conversion[group][unit2]))*base
+            if not isinstance(self.unit_conversion[group][unit1], tuple):
+                base = self.unit_conversion[group][unit1] * num
+            else:
+                modifier = self.unit_conversion[group][unit1][1]
+                base = self.unit_conversion[group][unit1][0] * (num+modifier)
+            
+            if not isinstance(self.unit_conversion[group][unit2], tuple):
+                fin = (1.0/float(self.unit_conversion[group][unit2]))*base
+            else:
+                fin = (1.0/float(self.unit_conversion[group][unit2][0]))*base
+                modifier = self.unit_conversion[group][unit2][1]
+                fin -= modifier
             
             self.sendChatMessage(self.send, channel, "{0} {1} = {3} {2}".format(num, unit1, unit2, fin))
             
