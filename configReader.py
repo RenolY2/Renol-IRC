@@ -10,7 +10,7 @@ class invalidConfig(Exception):
 class Configuration():
     def __init__(self):
         self.config = {}
-        self.template = ["server", "port", "usernick", "pass", "ident", "channels", "prefix", "admins", "loglevel"]
+        self.template = ["server", "port", "usernick", "pass", "ident", "channels", "prefix", "admins", "loglevel", "force_ipv6"]
         self.configname = "config.txt"
         
         self.found = []
