@@ -27,9 +27,6 @@ class IRC_Main():
         
         self.adminlist = config.getAdmins()
         
-        self.serverConn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.serverConn.settimeout(300)
-        
         self.nsAuth = False
         
         self.shutdown = False
@@ -37,11 +34,9 @@ class IRC_Main():
         
         self.loglevel = config.config["loglevel"]
         
-        self.__root_logger__ = logging.getLogger("IRCMainLoop")
-        
     def start(self):
-        self.serverConn.connect((self.host, self.port))
-
+        self.serverConn = socket.create_connection((self.host, self.port), 300) 
+        
         self.readThread = IRC_reader(self.serverConn)
         self.writeThread = IRC_writer(self.serverConn)
         
@@ -53,6 +48,14 @@ class IRC_Main():
         self.writeThread.sendMsg('USER '+ self.myident + ' '+self.passw+' '+"HOST"+' '+self.host, 0)
         
         self.comHandle = commandHandling(self.channels, self.prefix, self.name, self.myident, self.adminlist, self.loglevel)
+        
+        peerinfo = self.serverConn.getpeername()
+        clientinfo = self.serverConn.getsockname()
+        
+        self.__root_logger__ = logging.getLogger("IRCMainLoop")
+        
+        self.__root_logger__.info("Connected to %s (IP address: %s, port: %s)",self.host, peerinfo[0], peerinfo[1])
+        self.__root_logger__.debug("Local IP: %s, local port used by this connection: %s", clientinfo[0], clientinfo[1])
         
         self.__root_logger__.info("BOT IS NOW ONLINE: Starting listening for server responses.")
         
