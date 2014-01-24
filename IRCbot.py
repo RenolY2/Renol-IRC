@@ -25,6 +25,12 @@ class IRC_Main():
         self.channels = config.getChannels()
         self.myident = config.config["ident"]
         
+        if config.config["force_ipv6"].lower() not in ["true", "false"]:
+            raise RuntimeError("Problem with config: force_ipv6 should be true or false!")
+        else:
+            self.forceIPv6 = (config.config["force_ipv6"].lower() == "true" and True) or False
+            print self.forceIPv6
+            
         self.adminlist = config.getAdmins()
         
         self.nsAuth = False
@@ -35,7 +41,28 @@ class IRC_Main():
         self.loglevel = config.config["loglevel"]
         
     def start(self):
-        self.serverConn = socket.create_connection((self.host, self.port), 300) 
+        if self.forceIPv6 == True:
+            if socket.has_ipv6:
+                try:
+                    info = socket.getaddrinfo(self.host, self.port, socket.AF_INET6, socket.SOCK_STREAM, socket.SOL_TCP)
+                    
+                    # We grab the information from the first entry in the info list, 
+                    # which is hopefully the one we require. 
+                    # NOTE: Potential problem: Does it still work if the URL has no IPv6 address?
+                    family, socktype, proto, canonname, sockaddr = info[0] 
+                except socket.gaierror as error:
+                    print "getaddrinfo failed! Maybe IPv6 isn't supported on this platform? Check your config!"
+                    raise error
+                
+                self.serverConn = socket.socket(socket.AF_INET6)
+                self.serverConn.settimeout(300)
+                
+                self.serverConn.connect(sockaddr)
+                
+            else:
+                raise RuntimeError("IPv6 isn't supported on this platform. Please check the config file.")
+        else:
+            self.serverConn = socket.create_connection((self.host, self.port), 300) 
         
         self.readThread = IRC_reader(self.serverConn)
         self.writeThread = IRC_writer(self.serverConn)
@@ -57,7 +84,7 @@ class IRC_Main():
         self.__root_logger__.info("Connected to %s (IP address: %s, port: %s)",self.host, peerinfo[0], peerinfo[1])
         self.__root_logger__.debug("Local IP: %s, local port used by this connection: %s", clientinfo[0], clientinfo[1])
         
-        self.__root_logger__.info("BOT IS NOW ONLINE: Starting listening for server responses.")
+        self.__root_logger__.info("BOT IS NOW ONLINE: Starting to listen for server responses.")
         
         while self.shutdown == False:
             
@@ -88,7 +115,6 @@ class IRC_Main():
                         commandParameters = ""
                 
                 
-                #print "HEY", command, commandParameters
                 self.comHandle.handle(self.writeThread.sendMsg, prefix, command, commandParameters, self.nsAuth)
                 
             except Queue.Empty:
@@ -128,15 +154,16 @@ if not config.doesExist():
     
     dat = {}
     dat["server"] = raw_input("Server IP or address: ")
-    dat["port"] = raw_input("Server port (default is 6667): ")
+    dat["port"] = raw_input("Server port (default for most servers is 6667): ")
     dat["usernick"] = raw_input("Nickname: ")
-    dat["pass"] = getpass.getpass("Password (for authentication with nickserv, if server supports it): ")
+    dat["pass"] = getpass.getpass("Password (for authentication with NickServ, if server supports it): ")
     dat["ident"] = raw_input("Identification string (can be the same as the Nickname): ")
     dat["channels"] = raw_input("Channels (if you want to join several channels, delimit with a comma): ")
     dat["prefix"] = raw_input("Command Prefix: ")
     dat["admins"] = raw_input("Admins (which users should have elevated rights on the bot? If more than one, delimit with a comma): ")
     dat["loglevel"] = raw_input("Which is the least severe type of log messages that should still be logged? \n"
-                                "(starting with the least severe, one of NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL (INFO is recommended))")
+                                "(starting with the least severe, one of NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL (INFO is recommended)): ")
+    dat["force_ipv6"] = raw_input("Force connection with IPv6? (True/False) (Unless necessary, False is recommended): ")
     
     config.createNewConfig(dat)
     
@@ -149,7 +176,12 @@ bot = IRC_Main(config)
 try:
     bot.start()
 except Exception as error:
-    bot.__root_logger__.exception("The bot has encountered an exception and had to shut down.")
+    if getattr(bot, "__root_logger__", None) != None:
+        bot.__root_logger__.exception("The bot has encountered an exception and had to shut down.")
+        log = True
+    else:
+        print "Tried to log an error, but logger wasn't initialized."
+        log = False
     print "OH NO I DIED: "+str(error)
     traceb = str(traceback.format_exc())
     print traceb
@@ -164,24 +196,35 @@ except Exception as error:
         for i in range(bot.comHandle.PacketsReceivedBeforeDeath.qsize()):
             excFile.write(bot.comHandle.PacketsReceivedBeforeDeath.get(block = False)+"\n")
         bot.comHandle.threading.sigquitAll()
-        bot.__root_logger__.debug("All threads were signaled to shut down.")
+        if log: bot.__root_logger__.debug("All threads were signaled to shut down.")
         
     excFile.write("-----------------------------------------------------\n")
     excFile.write("ReadThread Exception: \n")
-    excFile.write(str(bot.readThread.error)+" \n")
-    bot.__root_logger__.info("Exception encountered by ReadThread (if any): %s\n", str(bot.readThread.error))
+    
+    if getattr(bot, "readThread", None) != None: 
+        excFile.write(str(bot.readThread.error)+" \n")
+        bot.readThread.ready = False
+    else:
+        excFile.write("ReadThread not initialized\n")
+    if log: bot.__root_logger__.info("Exception encountered by ReadThread (if any): %s\n", str(bot.readThread.error))
+    
     excFile.write("-----------------------------------------------------\n")
     excFile.write("WriteThread Exception: \n")
-    excFile.write(str(bot.writeThread.error)+" \n")
-    bot.__root_logger__.info("Exception encountered by WriteThread (if any): %s\n", str(bot.writeThread.error))
+    
+    if getattr(bot, "writeThread", None) != None: 
+        excFile.write(str(bot.writeThread.error)+" \n")
+        #bot.writeThread.waitUntilEmpty()
+        bot.writeThread.signal = True
+    else:
+        excFile.write("WriteThread not initialized\n")
+    if log: bot.__root_logger__.info("Exception encountered by WriteThread (if any): %s\n", str(bot.writeThread.error))
     
     excFile.close
     
     
     
-    bot.readThread.ready = False
-    #bot.writeThread.waitUntilEmpty()
-    bot.writeThread.signal = True
-    #raise error
-bot.__root_logger__.info("End of Session\n\n\n\n")
+    
+    
+    
+if log: bot.__root_logger__.info("End of Session\n\n\n\n")
 logging.shutdown()
