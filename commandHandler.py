@@ -251,8 +251,8 @@ class commandHandling():
         files = os.listdir(dir)
         newlist = []
         self.__CMDHandler_log__.debug("Listing files in directory '%s'", dir)
-        for i in files:
-            if ".pyc" not in i and "__init__" not in i and "conflicted copy" not in i and ".py" in i:
+        for i in files: 
+            if not i.startswith("__init__") and i.endswith(".py"):
                 newlist.append(i)
                 
         return newlist
