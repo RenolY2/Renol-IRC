@@ -153,7 +153,7 @@ if not config.doesExist():
     print "config.txt is missing, please input the information."
     
     dat = {}
-    dat["server"] = raw_input("Server IP or address: ")
+    dat["server"] = raw_input("Server IP or URL: ")
     dat["port"] = raw_input("Server port (default for most servers is 6667): ")
     dat["usernick"] = raw_input("Nickname: ")
     dat["pass"] = getpass.getpass("Password (for authentication with NickServ, if server supports it): ")
