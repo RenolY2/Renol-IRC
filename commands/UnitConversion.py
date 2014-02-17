@@ -12,10 +12,10 @@ conversion = {  "distance":{"m" : 1.0, "ft" : 0.3048, "km" : 1000, "mi" : 1609.3
                             "cm" : 1.0/100, "mm" : 1.0/1000, "nm" : 1.0/(10**(-9)), "yard" :  0.9144},
                 "area":{},
                 "volume":{},
-                "mass" : {  "kg" : 1, "lb" : 0.45359237, "oz" : 0.028, "st" : 6.35029318, "t" : 1000, "shtn" : 907.18474,
-                             "longtn": 1016.0469088 },
+                "mass" : {  "kg" : 1, "lb" : 0.45359237, "oz" : 0.028349523125, "st" : 6.35029318, "t" : 1000, "shtn" : 907.18474,
+                             "longtn": 1016.0469088},
                 "currency":{},
-                "time":{"sec" : 1, "min" : 60, "h" : 60*60, "day" :24*60*60, "year": 24*60*60*365},
+                "time":{"millisec" : 1/1000.0, "sec" : 1, "min" : 60, "h" : 60*60, "day" :24*60*60, "year": 24*60*60*365},
                 "speed":{},
                 "pressure":{},
                 "temperature" : {"c" : 1, "f" : (1/1.8, -32), "k" : (1, -273.15), "r" : (1/1.8, -491.67)},
@@ -29,13 +29,13 @@ conversion = {  "distance":{"m" : 1.0, "ft" : 0.3048, "km" : 1000, "mi" : 1609.3
 alias = {"distance" : {"meter" : "m", "feet" : "ft", "mile" :"mi", "inch" : "in"},
          "area" : {},
          "volume" : {},
-         "mass" : {"kilogram": "kg", "pound" : "lb", "tonne" : "t", "stone" : "st"},
+         "mass" : {"kilogram": "kg", "pound" : "lb", "tonne" : "t", "stone" : "st", "ounce" : "oz"},
          "currency" : {},
-         "time" : {"second" : "sec", "minute" : "min", "hour" : "h"},
+         "time" : {"ms" : "millisec", "millisecond" : "millisec","second" : "sec", "minute" : "min", "hour" : "h"},
          "speed" : {},
          "pressure" : {},
          "temperature" : {"celsius" : "c", "fahrenheit" : "f", "kelvin" : "k", "rankine" : "r"},
-         "compstorage" : {"bytes" : "byte", "bits" : "bit"}
+         "compstorage" : {"byte" : "byte", "bit" : "bit"}
          
          }
 
@@ -46,7 +46,7 @@ alias = {"distance" : {"meter" : "m", "feet" : "ft", "mile" :"mi", "inch" : "in"
 # An App ID is required for using the API from the website.
 # Register an account on the website to receive your own App ID, or ask me for one.
 # A free account can access the API 1000 times per month
-appid = ""
+appid = "48468715107f410f8879f6f3d7d4a231"
 
 def UpdateRates(appid, path):
     try:
@@ -208,8 +208,21 @@ def execute(self, name, params, channel, userdata, rank):
             match_normal2, norm_group2, norm_case2 = findGroup(unit2, self.unit_conversion)
             
             
+                
+            
+            
             match_normal1, norm_group1, norm_case1 = findGroup(unit1, self.unit_conversion)
             match_alias2, alias_group2, alias_case2 = findGroup(unit2, alias)
+            
+            if match_alias1 == False and unit1.endswith("s"):
+                match_alias1, alias_group1, alias_case1 = findGroup(unit1[:-1], alias)
+                if match_alias1 == True:
+                    unit1 = unit1[:-1]
+            
+            if match_alias2 == False and unit2.endswith("s"):
+                match_alias2, alias_group2, alias_case2 = findGroup(unit2[:-1], alias)
+                if match_alias2 == True:
+                    unit2 = unit2[:-1]
             
             # Case 2.1
             # If a match has been found for both searches, but the groups don't match,
@@ -297,7 +310,7 @@ def execute(self, name, params, channel, userdata, rank):
                 modifier = self.unit_conversion[group][unit2][1]
                 fin -= modifier
             
-            self.sendChatMessage(self.send, channel, "{0} {1} = {3} {2}".format(num, unit1, unit2, round(fin, 6)))
+            self.sendChatMessage(self.send, channel, "{0} {1} = {3} {2}".format(num, unit1, unit2, round(fin, 12)))
             
     elif len(params) > 3 and params[2].lower() not in words or len(params) > 4:
         self.sendChatMessage(self.send, channel, "Too many arguments")
