@@ -1,7 +1,8 @@
 import logging
+import sys
 
 import commands.miscLib.VigenereCipher as VigenereCipher
-
+    
 ID = "cipher"
 permission = 0
 privmsgEnabled = True
@@ -51,6 +52,14 @@ def execute(self, name, params, channel, userdata, rank, chan):
 
 def __initialize__(self, Startup):
     if Startup:
+        self.VigenereCipher = VigenereCipher.VigenereCipher()
+        
+    elif "commands.miscLib.VigenereCipher" in sys.modules:
+        reload(VigenereCipher)
+        
+        # We have reloaded the module, but not we have to recreate the 
+        # VigenereCipher instance. This is not a problem for modules that
+        # only provide helper functions.
         self.VigenereCipher = VigenereCipher.VigenereCipher()
     
     entry = self.helper.newHelp(ID)
