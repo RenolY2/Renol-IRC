@@ -11,7 +11,7 @@ class FunctionNameAlreadyExists(Exception):
         return self.name
     
 class ThreadTemplate(threading.Thread):
-    def __init__(self, name, function, pipe_Thread, pipe_Main):
+    def __init__(self, name, function, pipe_Thread, pipe_Main, baseReference = None):
         threading.Thread.__init__(self)
         self.function = function
         self.name = name
@@ -22,6 +22,8 @@ class ThreadTemplate(threading.Thread):
         self.running = False
         
         self.signal = False
+        
+        self.base = baseReference
         
     def run(self):
         self.running = True
@@ -38,13 +40,13 @@ class ThreadPool():
         self.pool = {}
         self.__threadPool_log__ = logging.getLogger("ThreadPool")
         
-    def addThread(self, name, function):
+    def addThread(self, name, function, baseReference = None):
         toMain, toThread = multiprocessing.Pipe(True)#, multiprocessing.Pipe(True) 
         
         if name in self.pool:
             raise FunctionNameAlreadyExists("The name is already used by a different thread function!")
         
-        thread = ThreadTemplate(name, function, toThread, toMain)
+        thread = ThreadTemplate(name, function, toThread, toMain, baseReference)
         self.pool[name] = {"thread" : thread, "read" : toMain, "write" : toThread}
         self.pool[name]["thread"].start()
         self.__threadPool_log__.debug("New thread '%s' started", name)
@@ -53,6 +55,7 @@ class ThreadPool():
     def sigquitThread(self, name):
         self.pool[name]["thread"].signal = True
         del self.pool[name]
+        self.__threadPool_log__.debug("Sending SIGKILL to thread '%s'", name)
     
     def send(self, name, obj):
         self.pool[name]["read"].send(obj)
