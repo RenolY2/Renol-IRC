@@ -1,6 +1,4 @@
 import time
-import datetime
-from calendar import timegm
 
 ID = "utc"
 permission = 0
@@ -10,7 +8,11 @@ privmsgEnabled = True
 def execute(self, name, params, channel, userdata, rank, chan):
     UTCtime = time.time()
     
-    
+    if chan:
+        destination = channel
+    else:
+        destination = name
+        
     if len(params) > 0:
         tzParameter = params[0]
         sign = tzParameter[0]
@@ -20,7 +22,7 @@ def execute(self, name, params, channel, userdata, rank, chan):
         elif sign == "-":
             sign = -1
         else:
-            self.sendChatMessage(self.send, channel, "Incorrect format. Check help about the command.")
+            self.sendChatMessage(self.send, destination, "Incorrect format. Check help about the command.")
             return
         
         timeoffset = tzParameter[1:]
@@ -29,7 +31,7 @@ def execute(self, name, params, channel, userdata, rank, chan):
             hour, minute = timeoffset.split(":", 1)
             
             if not hour.isdigit() or not minute.isdigit():
-                self.sendChatMessage(self.send, channel, "Incorrect time offset. Needs to be a number.")
+                self.sendChatMessage(self.send, destination, "Incorrect time offset. Needs to be a number.")
                 return
             
             tzOffsetHour = sign*int(hour)
@@ -37,7 +39,7 @@ def execute(self, name, params, channel, userdata, rank, chan):
             
         else:
             if not timeoffset.isdigit():
-                self.sendChatMessage(self.send, channel, "Incorrect time offset. Needs to be a number.")
+                self.sendChatMessage(self.send, destination, "Incorrect time offset. Needs to be a number.")
                 return
             
             tzOffsetHour = sign*int(timeoffset)
@@ -53,7 +55,7 @@ def execute(self, name, params, channel, userdata, rank, chan):
     
     
     
-    self.sendChatMessage(self.send, channel, time.asctime(offsetUTCtime))
+    self.sendChatMessage(self.send, destination, time.asctime(offsetUTCtime))
 
 def __initialize__(self, Startup):
     entry = self.helper.newHelp(ID)
