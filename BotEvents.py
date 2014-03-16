@@ -3,6 +3,8 @@
 import time
 import logging
 
+from timeit import default_timer
+
 class EventAlreadyExists(Exception):
     def __init__(self, eventName):
         self.name = eventName
@@ -23,9 +25,11 @@ class StandardEvent():
         self.comes_from_event = False
         self.__event_log__ = logging.getLogger("Event")
         
-# New to addEvent: channel needs to be a list containing at least one channel name as string    
-# from_event is a deprecated variable and exists only for backwards compatibility
-
+        self.eventStats = {}
+        
+    
+    # New to addEvent: channel needs to be a list containing at least one channel name as string    
+    # from_event is a deprecated variable and exists only for backwards compatibility
     def addEvent(self, name, function, channel = False, from_event = False):
         if self.comes_from_event == False:
             self.__event_log__.debug("Adding event '%s' for channels '%s'", name, channel)
@@ -43,7 +47,10 @@ class StandardEvent():
             
             if self.comes_from_event == False:
                 self.__events__[name] = {"function" : function,
-                                         "channels" : channel}
+                                         "channels" : channel,
+                                         "stats" : {"average" : None,
+                                                    "min" : None,
+                                                    "max" : None}}
             else:
                 self.operationQueue.append(("add", name, function, channel))
 
@@ -51,9 +58,29 @@ class StandardEvent():
     
     
     def __execEvent__(self, eventName, commandHandler):
-
+        start = default_timer()
+        
         self.__events__[eventName]["function"](commandHandler, self.__events__[eventName]["channels"])
-    
+        
+        timeTaken = default_timer() - start
+        
+        stats = self.__events__[eventName]["stats"]
+        
+        if stats["average"] == None:
+            stats["average"] = timeTaken
+            stats["min"] = timeTaken
+            stats["max"] = timeTaken
+        else:
+            stats["average"] = (stats["average"]+timeTaken) / 2.0
+            
+            if timeTaken < stats["min"]:
+                stats["min"] = timeTaken
+                
+            if timeTaken > stats["max"]:
+                stats["max"] = timeTaken
+            
+            
+        
     # commandHandler is an instance of the commandHandler class
     # it is necessary for calling some of the bot's functions, e.g. sendChatMessage
     def tryAllEvents(self, commandHandler):
@@ -66,9 +93,19 @@ class StandardEvent():
             for i in range(len(self.operationQueue)):
                 oper = self.operationQueue.pop(0)
                 if oper[0] == "add":
-                    self.__events__[oper[1]] = {"function" : oper[2], "channels" : oper[3]}
+                    name, function, channels = oper[1], oper[2], oper[3]
+                    self.__events__[name] = {"function" : function, 
+                                             "channels" : channels,
+                                             "stats"    :{
+                                                         "average" : None,
+                                                         "min" : None,
+                                                         "max" : None
+                                                         }
+                                            }
+                    
                 elif oper[0] == "del":
-                    del self.__events__[oper[1]]
+                    name = oper[1]
+                    del self.__events__[name]
                 else:
                     raise RuntimeError("Whaaat?!? It is neither add nor del? EXCEPTION")
     
@@ -146,10 +183,15 @@ class TimerEvent(StandardEvent):
                     
             if self.comes_from_event == False:
                 self.__events__[name] = {
-                                         "timeInterval"    : interval, 
-                                         "function"     : function,
-                                         "lastExecTime" : time.time(),
-                                         "channels" : channel
+                                         "timeInterval"     : interval, 
+                                         "function"         : function,
+                                         "lastExecTime"     : time.time(),
+                                         "channels"         : channel,
+                                         "stats"            : {
+                                                               "average" : None,
+                                                               "min" : None,
+                                                               "max" : None
+                                                               }
                                          }
             else:
                 self.operationQueue.append(("add", 
@@ -175,10 +217,15 @@ class TimerEvent(StandardEvent):
                 
                 if oper[0] == "add":
                     self.__events__[oper[1]] = {
-                                                "function" : oper[2],
-                                                "channels" : oper[3],
-                                                "timeInterval" : oper[4],
-                                                "lastExecTime" : oper[5], 
+                                                "function"      : oper[2],
+                                                "channels"      : oper[3],
+                                                "timeInterval"  : oper[4],
+                                                "lastExecTime"  : oper[5], 
+                                                "stats"         : {
+                                                                   "average" : None,
+                                                                   "min" : None,
+                                                                   "max" : None
+                                                                   }
                                                 }
                     
                 elif oper[0] == "del":
@@ -191,28 +238,75 @@ class TimerEvent(StandardEvent):
         timeInterval = self.__events__[eventName]["timeInterval"]
         
         if ntime - last >= timeInterval:
+            start = default_timer()
+            
             self.__events__[eventName]["function"](commandHandler, self.__events__[eventName]["channels"])
+            
+            timeTaken = default_timer() - start
+        
+            stats = self.__events__[eventName]["stats"]
+            
+            if stats["average"] == None:
+                stats["average"] = timeTaken
+                stats["min"] = timeTaken
+                stats["max"] = timeTaken
+            else:
+                stats["average"] = (stats["average"]+timeTaken) / 2.0
+                
+                if timeTaken < stats["min"]:
+                    stats["min"] = timeTaken
+                    
+                if timeTaken > stats["max"]:
+                    stats["max"] = timeTaken
+            
             self.__events__[eventName]["lastExecTime"] = time.time()
         
 class MsgEvent(StandardEvent):
     def tryAllEvents(self, commandHandler, userdata, message, channel):
         self.comes_from_event = True
+        
         for event in self.__events__:
             self.__execEvent__(event, commandHandler, userdata, message, channel)
+            
         self.comes_from_event = False
+        
         if len(self.operationQueue) > 0:
             for i in range(len(self.operationQueue)):
                 oper = self.operationQueue.pop(0)
                 
                 if oper[0] == "add":
                     self.__events__[oper[1]] = {"function" : oper[2], 
-                                                "channels" : oper[3]}
+                                                "channels" : oper[3],
+                                                "stats"    : {
+                                                              "average" : None,
+                                                              "min" : None,
+                                                              "max" : None
+                                                              }
+                                                }
                 elif oper[0] == "del":
                     del self.__events__[oper[1]]
                 else:
                     raise RuntimeError("Whaaat?!? It is neither add nor del? EXCEPTION")
     
     def __execEvent__(self, eventName, commandHandler, userdata, message, channel):
-
+        start = default_timer()
+        
         self.__events__[eventName]["function"](commandHandler, self.__events__[eventName]["channels"], userdata, message, channel)
+        
+        timeTaken = default_timer() - start
+        
+        stats = self.__events__[eventName]["stats"]
+        
+        if stats["average"] == None:
+            stats["average"] = timeTaken
+            stats["min"] = timeTaken
+            stats["max"] = timeTaken
+        else:
+            stats["average"] = (stats["average"]+timeTaken) / 2.0
+            
+            if timeTaken < stats["min"]:
+                stats["min"] = timeTaken
+                
+            if timeTaken > stats["max"]:
+                stats["max"] = timeTaken
 
