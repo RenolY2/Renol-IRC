@@ -1,7 +1,10 @@
 import imp, os
 import Queue
 import logging
+
 from time import strftime
+from timeit import default_timer
+from datetime import datetime
 
 import centralizedThreading
 from BotEvents import TimerEvent, MsgEvent
@@ -21,7 +24,6 @@ class commandHandling():
         self.Plugin = self.__LoadModules__("IRCpackets")
         self.commands = self.__LoadModules__("commands")
         
-        print adminlist
         self.bot_userlist = adminlist
         self.Bot_Auth = trackVerification(adminlist)
         
@@ -35,8 +37,9 @@ class commandHandling():
         self.events["time"].addEvent("LogfileSwitch", 60, self.LoggingModule.__switch_filehandle_daily__)
         
         self.server = None
-        
         self.latency = None
+        self.rankconvert = {"@@" : 3, "@" : 2, "+" : 1, "" : 0}
+        self.startupTime = datetime.now()
         
         self.PacketsReceivedBeforeDeath = Queue.Queue(maxsize = 50)
         
@@ -44,7 +47,7 @@ class commandHandling():
         
         self.helper = HelpModule()
         
-        self.rankconvert = {"@@" : 3, "@" : 2, "+" : 1, "" : 0}
+        
         
         
         
