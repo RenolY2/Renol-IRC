@@ -219,7 +219,7 @@ except Exception as error:
         excFile.write("WriteThread not initialized\n")
     if log: bot.__root_logger__.info("Exception encountered by WriteThread (if any): %s\n", str(bot.writeThread.error))
     
-    excFile.close
+    excFile.close()
     
     
     
