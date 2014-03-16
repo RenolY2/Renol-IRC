@@ -15,12 +15,14 @@ class ThreadTemplate(threading.Thread):
         threading.Thread.__init__(self)
         self.function = function
         self.name = name
-        # toThread is the Queue that is used by the thread to receive data
-        # fromThread is used by the thread to send data to outside of the thread
-        self.ThreadPipe = pipe_Thread
-        self.MainPipe = pipe_Main
-        self.running = False
         
+        # MainPipe and ThreadPipe are the two ends of the same pipe. 
+        # Data sent on MainPipe can be received on ThreadPipe, and vice versa.
+        # MainPipe is used by the bot framework. ThreadPipe is used by the thread.
+        self.MainPipe = pipe_Main
+        self.ThreadPipe = pipe_Thread
+        
+        self.running = False
         self.signal = False
         
         self.base = baseReference
@@ -28,9 +30,12 @@ class ThreadTemplate(threading.Thread):
     def run(self):
         self.running = True
         try:
-            self.function(self, self.ThreadPipe)#, self.Thread.send)
+            self.function(self, self.ThreadPipe)
         except Exception as error:
-            self.ThreadPipe.send({"action" : "exceptionOccured", "exception" : error, "functionName" : self.name, "traceback" : str(traceback.format_exc())})
+            self.ThreadPipe.send({
+                                  "action" : "exceptionOccured", "exception" : error, 
+                                  "functionName" : self.name, "traceback" : str(traceback.format_exc())
+                                  })
             
         self.running = False
 
@@ -41,16 +46,15 @@ class ThreadPool():
         self.__threadPool_log__ = logging.getLogger("ThreadPool")
         
     def addThread(self, name, function, baseReference = None):
-        toMain, toThread = multiprocessing.Pipe(True)#, multiprocessing.Pipe(True) 
+        MainPipe, ThreadPipe = multiprocessing.Pipe(True)
         
         if name in self.pool:
             raise FunctionNameAlreadyExists("The name is already used by a different thread function!")
         
-        thread = ThreadTemplate(name, function, toThread, toMain, baseReference)
-        self.pool[name] = {"thread" : thread, "read" : toMain, "write" : toThread}
+        thread = ThreadTemplate(name, function, ThreadPipe, MainPipe, baseReference)
+        self.pool[name] = {"thread" : thread, "threadPipe" : ThreadPipe, "mainPipe" : MainPipe}
         self.pool[name]["thread"].start()
         self.__threadPool_log__.debug("New thread '%s' started", name)
-        #return toMain, toThread
     
     def sigquitThread(self, name):
         self.pool[name]["thread"].signal = True
@@ -58,13 +62,13 @@ class ThreadPool():
         self.__threadPool_log__.debug("Sending SIGKILL to thread '%s'", name)
     
     def send(self, name, obj):
-        self.pool[name]["read"].send(obj)
+        self.pool[name]["mainPipe"].send(obj)
     
     def recv(self, name):
-        return self.pool[name]["read"].recv()
+        return self.pool[name]["mainPipe"].recv()
     
     def poll(self, name, timeout = 0.1):
-        return self.pool[name]["read"].poll(timeout)
+        return self.pool[name]["mainPipe"].poll(timeout)
         
     
     def sigquitAll(self):
