@@ -67,7 +67,7 @@ class ThreadPool():
     def recv(self, name):
         return self.pool[name]["mainPipe"].recv()
     
-    def poll(self, name, timeout = 0.1):
+    def poll(self, name, timeout = 10**-12):
         return self.pool[name]["mainPipe"].poll(timeout)
         
     
