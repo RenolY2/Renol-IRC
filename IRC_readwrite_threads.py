@@ -41,7 +41,7 @@ class IRC_reader(threading.Thread):
                     print 
                     print "ERROR: "+str(error)
                     print
-                    self.error = error
+                    self.error = traceback.format_exc()
                     self.ready = False
                     break
                 else:
@@ -106,7 +106,7 @@ class IRC_writer(threading.Thread):
                 print 
                 print "ERROR: "+str(error)
                 print
-                self.error = error
+                self.error = traceback.format_exc()
                 self.ready = False
                 break
             else:
