@@ -46,12 +46,13 @@ class commandHandling():
         self.threading = centralizedThreading.ThreadPool()
         
         self.helper = HelpModule()
+        self.auth = None
         
         
         
         
         
-    def handle(self, send, prefix, command, params, auth, ):
+    def handle(self, send, prefix, command, params, auth):
         self.send = send
         
         ## In the next few lines I implement a basic logger so the logs can be put out when the bot dies.
