@@ -88,6 +88,19 @@ class commandHandling():
         for user in self.channelData[channel]["Userlist"]:
             if user[0].lower() == username.lower():
                 return user[1]
+    
+    def userGetRankNum(self, channel, username):
+        if username in self.bot_userlist and self.Bot_Auth.isRegistered(username):
+            return 3
+        else:
+            for user in self.channelData[channel]["Userlist"]:
+                if user[0].lower() == username.lower():
+                    if user[1] == "@@":
+                        return 2
+                    else:
+                        return self.rankconvert[user[1]]
+            
+            return -1 # No user found
             
     def retrieveTrueCase(self, channel):
         for chan in self.channelData:
@@ -125,10 +138,12 @@ class commandHandling():
             self.__CMDHandler_log__.debug("Breaking message %s into parts %s", msg, msgpart)
             
             for part in msgpart:
-                send("PRIVMSG "+str(channel)+" :"+str(part), 5)
+                #send("PRIVMSG {0} :{1}".format(channel, part))
+                send("PRIVMSG "+str(channel)+" :"+str(part))
                 self.__CMDHandler_log__.debug("Sending parted message to channel/user %s: '%s'", channel, msg)
         else:
-            send("PRIVMSG "+str(channel)+" :"+str(msg), 5)
+            #send("PRIVMSG {0} :{1}".format(channel, msg))
+            send("PRIVMSG "+str(channel)+" :"+str(msg))
             self.__CMDHandler_log__.debug("Sending to channel/user %s: '%s'", channel, msg)
             
     def sendNotice(self, destination, msg, msgsplitter = None, splitAt = " "):
