@@ -3,13 +3,9 @@ warnings.simplefilter("ignore", RuntimeWarning)
 
 import socket
 import time
-import re
-import sys
-import threading
 import traceback
 import Queue
 import datetime
-import getpass
 import logging
 
 from IRC_readwrite_threads import IRC_reader, IRC_writer, ThreadShuttingDown
@@ -17,28 +13,30 @@ from commandHandler import commandHandling
 from configReader import Configuration
 
 class IRC_Main():
-    def __init__(self, config):
-        self.host = config.config["server"]
-        self.port = int(config.config["port"])
-        self.name = config.config["usernick"]
-        self.passw = config.config["pass"]
-        self.channels = config.getChannels()
-        self.myident = config.config["ident"]
+    def __init__(self, configObj):
+        config = configObj.config
         
-        if config.config["force_ipv6"].lower() not in ["true", "false"]:
-            raise RuntimeError("Problem with config: force_ipv6 should be true or false!")
-        else:
-            self.forceIPv6 = (config.config["force_ipv6"].lower() == "true" and True) or False
-            print self.forceIPv6
+        self.host = config.get("Connection Info", "server")
+        self.port = config.getint("Connection Info", "port")
+        
+        self.name = config.get("Connection Info", "nickname")
+        self.passw = config.get("Connection Info", "password")
+        self.channels = configObj.getChannels()
+        self.myident = config.get("Connection Info", "ident")
+        self.realname = config.get("Connection Info", "realname")
+        
+        self.forceIPv6 = config.getboolean("Networking", "force ipv6")
+        self.bindIP = config.get("Networking", "bind address")
             
-        self.adminlist = config.getAdmins()
+        self.adminlist = configObj.getAdmins()
+        self.prefix = config.get("Administration", "command prefix")
+        self.loglevel = config.get("Administration", "logging level")
         
         self.nsAuth = False
-        
         self.shutdown = False
-        self.prefix = config.config["prefix"]
         
-        self.loglevel = config.config["loglevel"]
+        
+        
         
     def start(self):
         if self.forceIPv6 == True:
@@ -57,12 +55,18 @@ class IRC_Main():
                 self.serverConn = socket.socket(socket.AF_INET6)
                 self.serverConn.settimeout(300)
                 
+                if self.bindIP != "":
+                    self.serverConn.bind((self.bindIP, 0))
+                
                 self.serverConn.connect(sockaddr)
                 
             else:
                 raise RuntimeError("IPv6 isn't supported on this platform. Please check the config file.")
         else:
             self.serverConn = socket.create_connection((self.host, self.port), 300) 
+            
+            if self.bindIP != "":
+                    self.serverConn.bind((self.bindIP, 0))
         
         self.readThread = IRC_reader(self.serverConn)
         self.writeThread = IRC_writer(self.serverConn)
@@ -70,10 +74,9 @@ class IRC_Main():
         self.readThread.start()
         self.writeThread.start()
         
-        self.writeThread.sendMsg('PASS ' + self.passw, 0)
-        self.writeThread.sendMsg('NICK ' + self.name, 0)
-        self.writeThread.sendMsg('USER '+ self.myident + ' '+self.passw+' '+"HOST"+' '+self.host, 0)
-        
+        self.writeThread.sendMsg('PASS ' + self.passw)
+        self.writeThread.sendMsg('NICK ' + self.name)
+        self.writeThread.sendMsg('USER {0} * * {1}'.format(self.myident, self.realname))
         self.comHandle = commandHandling(self.channels, self.prefix, self.name, self.myident, self.adminlist, self.loglevel)
         
         peerinfo = self.serverConn.getpeername()
@@ -143,35 +146,19 @@ class IRC_Main():
             self.nsAuth = result
         else:
             raise TypeError
-        
-startFile = open("lastStart.txt", "w")  
-startFile.write("Started at: "+str(datetime.datetime.today()))
-startFile.close()              
 
-config = Configuration()
-if not config.doesExist():
-    print "config.txt is missing, please input the information."
-    
-    dat = {}
-    dat["server"] = raw_input("Server address: ")
-    dat["port"] = raw_input("Server port (default for most servers is 6667): ")
-    dat["usernick"] = raw_input("Nickname: ")
-    dat["pass"] = getpass.getpass("Password (for authentication with NickServ, if server supports it): ")
-    dat["ident"] = raw_input("Identification string (can be the same as the Nickname): ")
-    dat["channels"] = raw_input("Channels (if you want to join several channels, delimit with a comma): ")
-    dat["prefix"] = raw_input("Command Prefix: ")
-    dat["admins"] = raw_input("Admins (which users should have elevated rights on the bot? If more than one, delimit with a comma): ")
-    dat["loglevel"] = raw_input("Which is the least severe type of log messages that should still be logged? \n"
-                                "(starting with the least severe, one of NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL (INFO is recommended)): ")
-    dat["force_ipv6"] = raw_input("Force connection with IPv6? (True/False) (Unless necessary, False is recommended): ")
-    
-    config.createNewConfig(dat)
-    
-config.loadConfig()
-dat = config.config
-    
+def write_starting_date():
+    startFile = open("lastStart.txt", "w")  
+    startFile.write("Started at: "+str(datetime.datetime.today()))
+    startFile.close()              
+
+write_starting_date()    
+
+configObj = Configuration()
+configObj.loadConfig()
+configObj.check_options()
  
-bot = IRC_Main(config)   
+bot = IRC_Main(configObj)   
 
 try:
     bot.start()
