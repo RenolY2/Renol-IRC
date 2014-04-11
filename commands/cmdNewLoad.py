@@ -3,37 +3,8 @@ import imp
 ID = "newload"
 permission = 3
 
-"""def LoadNewModules(self,path):     
-    ModuleList = self.__ListDir__(path)
-    self.__CMDHandler_log__.info("Loading modules in path '%s'...", path)
-    Packet = {}
-    for i in ModuleList:
-        self.__CMDHandler_log__.debug("Loading file %s in path '%s'", i, path)
-        module = imp.load_source(i[0:-2], path+"/"+i)
-        #print i
-        Packet[module.ID] = (module, path+"/"+i)
-        
-        try:
-            if not callable(module.__initialize__):
-                module.__initialize__ = False
-                self.__CMDHandler_log__.log(0, "File %s does not use an initialize function", i)
-        except AttributeError:
-            module.__initialize__ = False
-            self.__CMDHandler_log__.log(0, "File %s does not use an initialize function", i)
-        
-            
-        Packet[module.ID] = (module, path+"/"+i)
-        #Packet[i[1].lower()].PATH = path + "/"+i[2]
-        #self.Packet[i[1]] = self.Packet[i[1]].EXEC()
-    
-    print "ALL MODULES LOADED"   
-    self.__CMDHandler_log__.info("Modules in path '%s' loaded.", path)
-    return Packet"""
-
-
 def execute(self, name, params, channel, userdata, rank):
     files = self.__ListDir__("commands")
-    print files
     currentlyLoaded = [self.commands[cmd][1] for cmd in self.commands]
     
     for item in currentlyLoaded:
