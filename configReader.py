@@ -1,4 +1,5 @@
 import re
+import ConfigParser
 
 class invalidConfig(Exception):
     def __init__(self, key, line):
@@ -7,67 +8,78 @@ class invalidConfig(Exception):
     def __str__(self):
         return "Invalid data on line {0}: {1}".format(self.line, self.key)
 
+def CreateDefaultConfig():
+    Parser = ConfigParser.SafeConfigParser(allow_no_value = True)
+    
+    Parser.add_section("Connection Info")
+    Parser.set("Connection Info", "nickname", "MyIRCBot")
+    Parser.set("Connection Info", "password", "foobar")
+    Parser.set("Connection Info", "ident", "MyIRCBot")
+    Parser.set("Connection Info", "realname", "RenolIRCBot")
+    
+    Parser.set("Connection Info", "server", "")
+    Parser.set("Connection Info", "port", "6667")
+    
+    Parser.add_section("Administration")
+    Parser.set("Administration", "bot operators", "")
+    Parser.set("Administration", "channels", "")
+    Parser.set("Administration", "command prefix", "=")
+    Parser.set("Administration", "logging level", "INFO")
+    
+    Parser.add_section("Networking")
+    Parser.set("Networking", "force IPv6", "False")
+    Parser.set("Networking", "bind address", "")
+    
+    return Parser
+
 class Configuration():
     def __init__(self):
-        self.config = {}
-        self.template = ["server", "port", "usernick", "pass", "ident", "channels", "prefix", "admins", "loglevel", "force_ipv6"]
-        self.configname = "config.txt"
+        self.config = None
+        
+        self.configname = "newconfig.cfg"
+        
+        self.mandatoryVariables = {"Connection Info" : {"nickname" : True, "password" : True, 
+                                                        "ident" : True, "realname" : True, "server" : True,
+                                                        "port" : True},
+                                   "Administration" : {"bot operators" : False, "channels" : False,
+                                                       "command prefix" : True, "logging level" : True},
+                                   
+                                   "Networking" : {"force ipv6" : True, "bind address" : False}
+                                   
+                                   }
         
         self.found = []
-        
-    def doesExist(self):
-        try:
-            temp = open(self.configname, "r")
-        except:
-            return False
-        else:
-            temp.close()
-            return True
-    
-    def createNewConfig(self, data = {}):
-        config = open(self.configname, "w")
-        config.write("")
-        config.close()
-        
-        config = open(self.configname, "a")
-        
-        for item in self.template:
-            val = item in data and data[item] or ""
-            config.write("{0} = {1}\n".format(item, val))
-        
-        config.close()
     
     def loadConfig(self):
-        config = open(self.configname, "r")
-        
-        for i, line in enumerate(config.readlines()):
+        try:
+            conFile = open(self.configname, "r")
+        except IOError as error:
+            config = CreateDefaultConfig()
+    
+            configFile = open(self.configname, "w")
+            config.write(configFile)
+            configFile.close()
             
-            #print i, line
-            match = re.match("\s*(?P<key>\w+)\s*=\s*(?P<val>.+)?\s*",line)
+            raise RuntimeError("The '{0}' file was missing. A new config file has been created. "
+                               "Please fill in the information.".format(self.configname))
+        else:
+            self.config = ConfigParser.SafeConfigParser()
+            self.config.readfp(conFile)
+    
+    def check_options(self):
+        for section in self.mandatoryVariables:
+            options = self.mandatoryVariables[section]
             
-            if match != None:
-                key, val = match.group("key"), match.group("val")
+            for option in options:
+                val = self.config.get(section, option)
                 
-                if val == None:
-                    raise invalidConfig("key \'{0}\' has no value".format(key), i)
-                elif match == None or key not in self.template:
-                    raise invalidConfig("incorrect key: \'{0}\'".format(line.strip()), i)
-                key, val = key.strip(), val.strip()
-                
-                self.config[key] = val
-                if key not in self.found:
-                    self.found.append(key)
-        
-        notFound = []
-        for key in self.template:
-            if key not in self.found:
-                notFound.append(key)
-        
-        if len(notFound) > 0:
-            raise RuntimeError("The following keys were not found in config.txt, please add them: "+", ".join(notFound))
+                if options[option] == True and val == "":
+                    raise RuntimeError("Option '{0}' in section '{1}' has no value, but is required to have one. "
+                                        "Please fill in the missing information.".format(option, section))
     
     def getChannels(self):
-        chans = self.config["channels"].split(",")
+        chans = self.config.get("Administration", "channels").split(",")
+        
         newchans = []
         for chan in chans:
             chan = chan.strip()
@@ -79,7 +91,8 @@ class Configuration():
         return newchans
     
     def getAdmins(self):
-        admins = self.config["admins"].split(",")
+        admins = self.config.get("Administration", "bot operators").split(",")
+        
         newadmins = []
         for admin in admins:
             admin = admin.strip()
