@@ -36,7 +36,7 @@ class Configuration():
     def __init__(self):
         self.config = None
         
-        self.configname = "newconfig.cfg"
+        self.configname = "config.cfg"
         
         self.mandatoryVariables = {"Connection Info" : {"nickname" : True, "password" : True, 
                                                         "ident" : True, "realname" : True, "server" : True,
