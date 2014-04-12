@@ -63,10 +63,8 @@ class IRC_Main():
             else:
                 raise RuntimeError("IPv6 isn't supported on this platform. Please check the config file.")
         else:
-            self.serverConn = socket.create_connection((self.host, self.port), 300) 
-            
-            if self.bindIP != "":
-                    self.serverConn.bind((self.bindIP, 0))
+            self.serverConn = socket.create_connection((self.host, self.port), 300,
+                                                       source_address = (self.bindIP, 0)) 
         
         self.readThread = IRC_reader(self.serverConn)
         self.writeThread = IRC_writer(self.serverConn)
