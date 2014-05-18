@@ -30,7 +30,7 @@ class StandardEvent():
     
     # New to addEvent: channel needs to be a list containing at least one channel name as string    
     # from_event is a deprecated variable and exists only for backwards compatibility
-    def addEvent(self, name, function, channel = False, from_event = False):
+    def addEvent(self, name, function, channel = [], from_event = False):
         if self.comes_from_event == False:
             self.__event_log__.debug("Adding event '%s' for channels '%s'", name, channel)
         else:
@@ -42,12 +42,12 @@ class StandardEvent():
             raise EventAlreadyExists(name)
         
         else:
-            if channel != False and not isinstance(channel, list):
+            if not isinstance(channel, list):
                 raise TypeError(str(channel)+" is "+str(type(channel))+" but needs to be list!")
             
             if self.comes_from_event == False:
                 self.__events__[name] = {"function" : function,
-                                         "channels" : channel,
+                                         "channels" : list(channel),
                                          "stats" : {"average" : None,
                                                     "min" : None,
                                                     "max" : None}}
@@ -57,10 +57,10 @@ class StandardEvent():
     
     
     
-    def __execEvent__(self, eventName, commandHandler):
+    def __execEvent__(self, eventName, commandHandler, *args, **kargs):
         start = default_timer()
         
-        self.__events__[eventName]["function"](commandHandler, self.__events__[eventName]["channels"])
+        self.__events__[eventName]["function"](commandHandler, self.__events__[eventName]["channels"], *args, **kargs)
         
         timeTaken = default_timer() - start
         
@@ -83,10 +83,10 @@ class StandardEvent():
         
     # commandHandler is an instance of the commandHandler class
     # it is necessary for calling some of the bot's functions, e.g. sendChatMessage
-    def tryAllEvents(self, commandHandler):
+    def tryAllEvents(self, commandHandler, *args, **kargs):
         self.comes_from_event = True
         for event in self.__events__:
-            self.__execEvent__(event, commandHandler)
+            self.__execEvent__(event, commandHandler, *args, **kargs)
         self.comes_from_event = False
         
         if len(self.operationQueue) > 0:
@@ -95,7 +95,7 @@ class StandardEvent():
                 if oper[0] == "add":
                     name, function, channels = oper[1], oper[2], oper[3]
                     self.__events__[name] = {"function" : function, 
-                                             "channels" : channels,
+                                             "channels" : list(channels),
                                              "stats"    :{
                                                          "average" : None,
                                                          "min" : None,
@@ -134,9 +134,9 @@ class StandardEvent():
         if eventName not in self.__events__:
             raise KeyError(str(eventName)+" does not exist!")
         else:
-            if self.__events__[eventName]["channels"] == False:
-                self.__events__[eventName]["channels"] = [channel]
-            elif channel not in self.__events__[eventName]["channels"]:
+            #if self.__events__[eventName]["channels"] == False:
+            #    self.__events__[eventName]["channels"] = [channel]
+            if channel not in self.__events__[eventName]["channels"]:
                 self.__events__[eventName]["channels"].append(channel)
             else:
                 raise ChannelAlreadyExists(channel)
@@ -146,23 +146,20 @@ class StandardEvent():
         if eventName not in self.__events__:
             raise KeyError(str(eventName)+" does not exist!")
         else:
-            if self.__events__[eventName]["channels"] == False:
-                pass
-            else:
-                self.__events__[eventName]["channels"].remove(channel)
+            self.__events__[eventName]["channels"].remove(channel)
     
     def getChannels(self, eventName):
         if eventName not in self.__events__:
             raise KeyError(str(eventName)+" does not exist!")
         else:
-            if self.__events__[eventName]["channels"] == False:
-                return []
-            else:
-                return self.__events__[eventName]["channels"]
+            #if self.__events__[eventName]["channels"] == False:
+            #    return []
+            #else:
+            return self.__events__[eventName]["channels"]
             
         
 class TimerEvent(StandardEvent):
-    def addEvent(self, name, interval, function, channel = False, from_event = False):
+    def addEvent(self, name, interval, function, channel = [], from_event = False):
         if self.comes_from_event == False:
             self.__event_log__.debug("Adding time event '%s' for channels '%s' with interval = %s second(s)", name, channel, interval)
         else:
@@ -178,7 +175,7 @@ class TimerEvent(StandardEvent):
             raise EventAlreadyExists(name)
         
         else:
-            if channel != False and not isinstance(channel, list):
+            if not isinstance(channel, list):
                 raise TypeError(str(channel)+" is "+str(type(channel))+" but needs to be list!")
                     
             if self.comes_from_event == False:
@@ -186,7 +183,7 @@ class TimerEvent(StandardEvent):
                                          "timeInterval"     : interval, 
                                          "function"         : function,
                                          "lastExecTime"     : time.time(),
-                                         "channels"         : channel,
+                                         "channels"         : list(channel),
                                          "stats"            : {
                                                                "average" : None,
                                                                "min" : None,
@@ -218,7 +215,7 @@ class TimerEvent(StandardEvent):
                 if oper[0] == "add":
                     self.__events__[oper[1]] = {
                                                 "function"      : oper[2],
-                                                "channels"      : oper[3],
+                                                "channels"      : list(oper[3]),
                                                 "timeInterval"  : oper[4],
                                                 "lastExecTime"  : oper[5], 
                                                 "stats"         : {
@@ -276,7 +273,7 @@ class MsgEvent(StandardEvent):
                 
                 if oper[0] == "add":
                     self.__events__[oper[1]] = {"function" : oper[2], 
-                                                "channels" : oper[3],
+                                                "channels" : list(oper[3]),
                                                 "stats"    : {
                                                               "average" : None,
                                                               "min" : None,
