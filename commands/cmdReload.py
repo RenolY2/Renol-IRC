@@ -10,8 +10,12 @@ def execute(self, name, params, channel, userdata, rank):
         path = self.commands[cmd][1]
         print path
         
-        self.sendChatMessage(self.send, channel, "Reloading "+path)
-        self.commands[cmd] = (imp.load_source(cmd, path), path)
+        # To load the plugin in a similar way to commandHandler's __LoadModules__ method,
+        # we need to retrieve the filename of the command from the path.
+        modulename = path.rpartition("/")[2][0:-3]
+        
+        self.sendMessage(channel, "Reloading "+path)
+        self.commands[cmd] = (imp.load_source("RenolIRC_"+cmd, path), path)
         
         try:
             if not callable(self.commands[cmd][0].__initialize__):
@@ -21,10 +25,11 @@ def execute(self, name, params, channel, userdata, rank):
         else:
             if self.commands[cmd][0].__initialize__ != False:
                 self.commands[cmd][0].__initialize__(self, False)
-        self.sendChatMessage(self.send, channel, "Done!")
+                
+        self.sendMessage(channel, "Done!")
     
     elif len(params) > 0 and params[0] not in self.commands:
-        self.sendChatMessage(self.send, channel, "Command does not exist")
+        self.sendMessage(channel, "Command does not exist")
     else:
         self.sendMessage(channel, "Please specify a command.")
 

@@ -288,7 +288,7 @@ class commandHandling():
         Packet = {}
         for i in ModuleList:
             self.__CMDHandler_log__.debug("Loading file %s in path '%s'", i, path)
-            module = imp.load_source(i[0:-2], path+"/"+i)
+            module = imp.load_source("RenolIRC_"+i[0:-3], path+"/"+i)
             #print i
             Packet[module.ID] = (module, path+"/"+i)
             

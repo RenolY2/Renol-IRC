@@ -21,7 +21,7 @@ def execute(self, name, params, channel, userdata, rank):
         
         for filename in files:
             path = "commands/"+filename
-            module = imp.load_source(filename[0:-2], path)
+            module = imp.load_source("RenolIRC_"+filename[0:-3], path)
             cmd = module.ID
             
             self.commands[cmd] = (module, path)
