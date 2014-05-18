@@ -29,10 +29,10 @@ def execute(self, name, params, channel, userdata, rank):
             try:
                 if not callable(module.__initialize__):
                     module.__initialize__ = False
-                    self.__CMDHandler_log__.log("File {0} does not use an initialize function".format(filename))
+                    self.__CMDHandler_log__.debug("File {0} does not use an initialize function".format(filename))
             except AttributeError:
                 module.__initialize__ = False
-                self.__CMDHandler_log__.log("File {0} does not use an initialize function".format(filename))
+                self.__CMDHandler_log__.debug("File {0} does not use an initialize function".format(filename))
             
             if module.__initialize__ != False:
                 module.__initialize__(self, True)
