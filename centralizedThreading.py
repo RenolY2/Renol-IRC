@@ -70,6 +70,15 @@ class ThreadPool():
     def poll(self, name, timeout = 10**-12):
         return self.pool[name]["mainPipe"].poll(timeout)
         
+    def checkStatus(self, name):
+        if name not in self.pool: 
+            return False, None
+        
+        if name in self.pool:
+            isRunning = self.pool[name]["thread"].running
+            
+            return True, isRunning
+        
     
     def sigquitAll(self):
         self.__threadPool_log__.debug("Sending SIGKILL to all running threads")
