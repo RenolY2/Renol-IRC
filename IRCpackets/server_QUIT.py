@@ -9,11 +9,15 @@ def execute(self, sendMsg, prefix, command, params):
     part2 = part1[2].partition("@")
     
     name = part1[0]
-    indent = part2[0]
+    ident = part2[0]
     host = part2[2]
     
-    newName = params[1:]
+    quitReason = params[1:]
     print "SERVER LEAVE"
+    print name, ident, host
+    print quitReason
+    
+    self.events["userquit"].tryAllEvents(self, name, ident, host, quitReason)
     
     for chan in self.channelData:
         print chan

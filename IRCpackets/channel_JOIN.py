@@ -1,3 +1,5 @@
+
+
 ID = "JOIN"
 
 def execute(self, sendMsg, prefix, command, params):
@@ -9,20 +11,17 @@ def execute(self, sendMsg, prefix, command, params):
     part2 = part1[2].partition("@")
     
     name = part1[0]
-    indent = part2[0]
+    ident = part2[0]
     host = part2[2]
     
     channel = self.retrieveTrueCase(params)
     
     if self.Bot_Auth.doesExist(name) and not self.Bot_Auth.isRegistered(name):
             self.whoisUser(name)
-            
-    if channel != False:
     
-    #if (name, "") not in self.channelData[channel]["Userlist"]:
-        
-        
-        
+    self.events["channeljoin"].tryAllEvents(self, name, ident, host, channel)
+    
+    if channel != False:
         nothere = True
         for derp in self.channelData[channel]["Userlist"]:
             if derp[0] == name:
@@ -31,3 +30,9 @@ def execute(self, sendMsg, prefix, command, params):
         
         if nothere == True:
             self.channelData[channel]["Userlist"].append((name, ""))
+        else:
+            self.__CMDHandler_log__.debug("%s has joined channel %s, "
+                                          "but he is already in the user list!", name, channel)
+    else:
+        self.__CMDHandler_log__.debug("Channel mismatch: %s has joined channel '%s', "
+                                      "But retrieveTrueCase returned False.", name, params)

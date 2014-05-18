@@ -9,13 +9,13 @@ def execute(self, sendMsg, prefix, command, params):
     
     channel = fields[0]
     name = fields[1]
+    kickreason = fields[2]
     
     chan = self.retrieveTrueCase(channel)
     
-    
+    self.events["channelkick"].tryAllEvents(self, name, chan, kickreason)
             
     if chan != False:
-        
         for i in range(len(self.channelData[chan]["Userlist"])):
             user, pref = self.channelData[chan]["Userlist"][i]
             if user == name:
