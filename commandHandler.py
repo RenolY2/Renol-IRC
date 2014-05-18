@@ -7,7 +7,7 @@ from timeit import default_timer
 from datetime import datetime
 
 import centralizedThreading
-from BotEvents import TimerEvent, MsgEvent
+from BotEvents import TimerEvent, MsgEvent, StandardEvent
 from IRC_registration import trackVerification
 from CommandHelp import HelpModule
 from IRCLogging import LoggingModule
@@ -33,7 +33,13 @@ class commandHandling():
         self.topic = {}
         self.cmdprefix = cmdprefix
         
-        self.events = {"time" : TimerEvent(), "chat" : MsgEvent()}
+        self.events = {"time" : TimerEvent(), "chat" : MsgEvent(),
+                       "channeljoin" : StandardEvent(),
+                       "channelpart" : StandardEvent(),
+                       "channelkick" : StandardEvent(),
+                       "userquit" : StandardEvent(),
+                       "nickchange" : StandardEvent()}
+        
         self.events["time"].addEvent("LogfileSwitch", 60, self.LoggingModule.__switch_filehandle_daily__)
         
         self.server = None
@@ -144,7 +150,7 @@ class commandHandling():
                 self.__CMDHandler_log__.debug("Sending parted message to channel/user %s: '%s'", channel, msg)
         else:
             #send("PRIVMSG {0} :{1}".format(channel, msg))
-            send("PRIVMSG "+str(channel)+" :"+str(msg))
+            send("PRIVMSG "+channel+" :"+msg)
             self.__CMDHandler_log__.debug("Sending to channel/user %s: '%s'", channel, msg)
             
     def sendNotice(self, destination, msg, msgsplitter = None, splitAt = " "):
@@ -257,7 +263,7 @@ class commandHandling():
     
     def userInSight(self, user):
         print self.channelData
-        self.__CMDHandler_log__.debug("Checking if user '%s' is in the following channels: %s", self.channelData.keys())
+        self.__CMDHandler_log__.debug("Checking if user '%s' is in the following channels: %s", user, self.channelData.keys())
         for channel in self.channelData:
             for userD in self.channelData[channel]["Userlist"]:
                 if user == userD[0]:
