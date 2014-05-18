@@ -8,6 +8,7 @@ help_log = logging.getLogger("HelpModule")
 def execute(self, name, params, channel, userdata, rank):
     if len(params) > 0:
         cmdname = params[0]
+        
         try:
             help = self.helper.getCmdHelp(cmdname)
         except KeyError as error:
