@@ -1,5 +1,7 @@
 
 import urllib2
+import traceback
+
 from urllib import quote
 
 from commands.miscLib.xml_to_dict import xml_to_dict
@@ -38,15 +40,33 @@ def execute(self, name, params, channel, userdata, rank):
             
             for item in pod:
                 description = item["@title"]
-                result = item["subpod"]["plaintext"]
-                
-                if result != None:
-                    result = result.strip("| ")
-                    result = result.replace(" | ", ": ")
-                    result = " | ".join(result.split("\n"))
-                   
+                #print item
+                #print item["subpod"]
+                if not isinstance(item["subpod"], list):
+                    result = item["subpod"]["plaintext"]
                     
-                    self.sendMessage(channel, "{0}: {1}".format(description, result))
+                    if result != None:
+                        result = result.strip("| ")
+                        result = result.replace(" | ", ": ")
+                        result = " | ".join(result.split("\n"))
+                       
+                        
+                        self.sendMessage(channel, "{0}: {1}".format(description, result))
+                else:
+                    entries = []
+                    for subpod in item["subpod"]:
+                        result = subpod["plaintext"]
+                        
+                        if result != None:
+                            result = result.strip("| ")
+                            result = result.replace(" | ", ": ")
+                            result = " | ".join(result.split("\n"))
+                           
+                            entries.append(result)
+                    
+                    self.sendMessage(channel, "{0}: {1}".format(description, " | ".join(entries)))
+                    
             
         except Exception as error:
             self.sendMessage(channel, "Error appeared: {0}".format(str(error)))
+            traceback.print_exc()
