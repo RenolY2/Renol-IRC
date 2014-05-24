@@ -37,11 +37,13 @@ class IRC_reader(threading.Thread):
             while self.ready == True:
                 try:
                     data = self.sock.recv(1024)
+                    time.sleep(0.01)
                 except Exception as error:
                     print 
                     print "ERROR: "+str(error)
                     print
                     self.error = traceback.format_exc()
+                    
                     self.ready = False
                     break
                 else:
@@ -93,6 +95,7 @@ class IRC_writer(threading.Thread):
                 time.sleep(1.5)
                 #print "SENT: "+toSend
                 
+                
             except Queue.Empty:
                 # an attempt to fix the bug that causes the writeThread to hang indefinitely because it receives no more data from the Queue
                 if self.signal == False:
@@ -101,17 +104,20 @@ class IRC_writer(threading.Thread):
                 else:
                     # the signal to turn the thread off has been set? Ok, time to break out of the loop
                     self.ready = False
+                    break
                     
             except Exception as error:
                 print 
                 print "ERROR: "+str(error)
                 print
                 self.error = traceback.format_exc()
+                
                 self.ready = False
                 break
             else:
                 if self.signal == True and self.buffer.empty():
                     self.ready = False
+                    break
             #else:
             #    self.ready = False
             #    self.sock.close()
