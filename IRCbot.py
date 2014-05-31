@@ -37,7 +37,6 @@ class IRC_Main():
         
         
         
-        
     def start(self):
         if self.forceIPv6 == True:
             if socket.has_ipv6:
@@ -91,7 +90,6 @@ class IRC_Main():
             
             try:
                 msg = self.readThread.readMsg()
-                
                 msgParts = msg.split(" ", 2)
                 
                 #print msgParts
@@ -179,7 +177,9 @@ except Exception as error:
     # in comHandle missing afterwards.
     if getattr(bot, "comHandle", None) != None: 
         for i in range(bot.comHandle.PacketsReceivedBeforeDeath.qsize()):
-            excFile.write(bot.comHandle.PacketsReceivedBeforeDeath.get(block = False)+"\n")
+            msg = bot.comHandle.PacketsReceivedBeforeDeath.get(block = False)
+            excFile.write(msg.encode("utf-8", "replace"))
+            excFile.write("\n")
         bot.comHandle.threading.sigquitAll()
         if log: bot.__root_logger__.debug("All threads were signaled to shut down.")
         
@@ -191,7 +191,7 @@ except Exception as error:
         bot.readThread.ready = False
     else:
         excFile.write("ReadThread not initialized\n")
-    if log: bot.__root_logger__.info("Exception encountered by ReadThread (if any): %s\n", str(bot.readThread.error))
+    if log: bot.__root_logger__.info(u"Exception encountered by ReadThread (if any): %s\n", str(bot.readThread.error))
     
     excFile.write("-----------------------------------------------------\n")
     excFile.write("WriteThread Exception: \n")
@@ -202,7 +202,7 @@ except Exception as error:
         bot.writeThread.signal = True
     else:
         excFile.write("WriteThread not initialized\n")
-    if log: bot.__root_logger__.info("Exception encountered by WriteThread (if any): %s\n", str(bot.writeThread.error))
+    if log: bot.__root_logger__.info(u"Exception encountered by WriteThread (if any): %s\n", str(bot.writeThread.error))
     
     excFile.close()
     
