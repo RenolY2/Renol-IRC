@@ -130,5 +130,4 @@ class IRC_writer(threading.Thread):
     def sendMsg(self, msg, priority = False):
         msg = msg.replace(chr(13), " ")
         msg = msg.replace(chr(10), " ")
-        print type(msg), "hello"
         self.buffer.put(msg+unicode(chr(13))+unicode(chr(10)))
