@@ -65,14 +65,11 @@ class commandHandling():
         ## Should come in handy when looking at what or who caused trouble
         ## There is room for 50 entries, number can be increased or lowered at a later point
         try:
-            self.PacketsReceivedBeforeDeath.put("{0} {1} {2}".format(prefix, command, params), False)
+            self.PacketsReceivedBeforeDeath.put(u"{0} {1} {2}".format(prefix, command, params), False)
         except Queue.Full:
             self.PacketsReceivedBeforeDeath.get(block = False)
-            self.PacketsReceivedBeforeDeath.put("{0} {1} {2}".format(prefix, command, params), False)
+            self.PacketsReceivedBeforeDeath.put(u"{0} {1} {2}".format(prefix, command, params), False)
         
-        
-        if command == "376":
-            self.auth = auth
         
         try:
             if command in self.Plugin:
