@@ -24,7 +24,7 @@ def execute(self, sendMsg, msgprefix, command, params):
         channel = name
         is_channel = False
         perms = ""
-        print "HELP I'M GETTING PRIVMSGD BY ",name," : ",chatMessage
+        #print "HELP I'M GETTING PRIVMSGD BY ",name," : ",chatMessage
         msg_log.info("Private message from '%s' [%s@%s]: %s", name, indent, host, chatMessage)
     else: 
         is_channel = True
@@ -36,7 +36,7 @@ def execute(self, sendMsg, msgprefix, command, params):
     
     #print msgprefix, params
     
-    print "<"+name+"> "+chatMessage
+    print "<"+name.encode("ascii", "replace")+"> "+chatMessage.encode("ascii", "replace")
     
     chatParams = chatMessage.rstrip().split(" ")
     
