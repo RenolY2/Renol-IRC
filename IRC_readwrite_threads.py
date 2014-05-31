@@ -57,7 +57,7 @@ class IRC_reader(threading.Thread):
                     for line in lines:
                         # print "IN: %s" % line
                         line = line.rstrip()  # Strip whitespace to the right
-                        self.buffer.put(line, True)
+                        self.buffer.put(line.decode("utf-8", errors="replace"), True)
             print "ReadThread is down!"
         
     
@@ -91,7 +91,7 @@ class IRC_writer(threading.Thread):
         while self.ready == True:
             try:
                 toSend = self.buffer.get_nowait()
-                self.sock.send(toSend)
+                self.sock.send(toSend.encode("utf-8", "replace"))
                 time.sleep(1.5)
                 #print "SENT: "+toSend
                 
@@ -130,4 +130,5 @@ class IRC_writer(threading.Thread):
     def sendMsg(self, msg, priority = False):
         msg = msg.replace(chr(13), " ")
         msg = msg.replace(chr(10), " ")
-        self.buffer.put(msg+chr(13)+chr(10))
+        print type(msg), "hello"
+        self.buffer.put(msg+unicode(chr(13))+unicode(chr(10)))
