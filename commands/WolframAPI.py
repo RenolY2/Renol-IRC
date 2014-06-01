@@ -34,37 +34,40 @@ def execute(self, name, params, channel, userdata, rank):
     
     if len(request) > 1:
         try:
-            result = self.WolframAlpha.submit(request)
-            xmldict = xml_to_dict(result)
+            result = self.WolframAlpha.submit(request)#.decode("utf-8", "replace")
+            xmldict = xml_to_dict(result, encoding = "utf-8")
+            
             pod = xmldict["queryresult"]["pod"]
             
             for item in pod:
-                description = item["@title"]
+                description = item["@title"]#.decode("utf-8")
                 #print item
                 #print item["subpod"]
                 if not isinstance(item["subpod"], list):
                     result = item["subpod"]["plaintext"]
                     
                     if result != None:
+                        #result = result.decode("utf-8", "replace")
                         result = result.strip("| ")
                         result = result.replace(" | ", ": ")
                         result = " | ".join(result.split("\n"))
                        
                         
-                        self.sendMessage(channel, "{0}: {1}".format(description, result))
+                        self.sendMessage(channel, u"{0}: {1}".format(description, result))
                 else:
                     entries = []
                     for subpod in item["subpod"]:
                         result = subpod["plaintext"]
                         
                         if result != None:
+                            #result = result.decode("utf-8", "replace")
                             result = result.strip("| ")
                             result = result.replace(" | ", ": ")
                             result = " | ".join(result.split("\n"))
                            
                             entries.append(result)
                     
-                    self.sendMessage(channel, "{0}: {1}".format(description, " | ".join(entries)))
+                    self.sendMessage(channel, u"{0}: {1}".format(description, " | ".join(entries)))
                     
             
         except Exception as error:

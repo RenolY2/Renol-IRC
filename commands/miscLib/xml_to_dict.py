@@ -1,5 +1,5 @@
 from collections import defaultdict
-from xml.etree import cElementTree as ET
+from xml.etree import ElementTree as ET
 
 # Code snippet from K3---rnc for the conversion of XML to the python dictionary format.
 # http://stackoverflow.com/questions/2148119/how-to-convert-an-xml-string-to-a-dictionary-in-python/10077069#10077069
@@ -24,8 +24,12 @@ def etree_to_dict(t):
             d[t.tag] = text
     return d
                 
-def xml_to_dict(xmlstring):
-    tree = ET.XML(xmlstring)
+def xml_to_dict(xmlstring, encoding = None):
+    if encoding != None:
+        xparser = ET.XMLParser(encoding = encoding)
+    else:
+        xparser = None
+    tree = ET.XML(xmlstring, xparser)
     xmldict = etree_to_dict(tree)
     
     return xmldict
