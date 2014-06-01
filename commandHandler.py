@@ -143,11 +143,13 @@ class commandHandling():
             
             for part in msgpart:
                 #send("PRIVMSG {0} :{1}".format(channel, part))
-                send("PRIVMSG "+str(channel)+" :"+str(part))
+                #send("PRIVMSG "+str(channel)+" :"+str(part))
+                send(u"PRIVMSG {0} :{1}".format(channel, part))
                 self.__CMDHandler_log__.debug("Sending parted message to channel/user %s: '%s'", channel, msg)
         else:
             #send("PRIVMSG {0} :{1}".format(channel, msg))
-            send("PRIVMSG "+channel+" :"+msg)
+            #send("PRIVMSG "+channel+" :"+msg)
+            send(u"PRIVMSG {0} :{1}".format(channel, msg))
             self.__CMDHandler_log__.debug("Sending to channel/user %s: '%s'", channel, msg)
             
     def sendNotice(self, destination, msg, msgsplitter = None, splitAt = " "):
@@ -166,10 +168,12 @@ class commandHandling():
             self.__CMDHandler_log__.debug("Breaking message %s into parts %s", msg, msgpart)
             
             for part in msgpart:
-                self.send("NOTICE "+str(destination)+" :"+str(part))
+                #self.send("NOTICE "+str(destination)+" :"+str(part))
+                self.send(u"NOTICE {0} :{1}".format(destination, part))
                 self.__CMDHandler_log__.debug("Sending parted notice to channel/user %s: '%s'", destination, msg)
         else:
-            self.send("NOTICE "+str(destination)+" :"+str(msg))
+            #self.send("NOTICE "+str(destination)+" :"+str(msg))
+            self.send(u"NOTICE {0} :{1}".format(destination, msg))
             self.__CMDHandler_log__.debug("Sending notice to channel/user %s: '%s'", destination, msg)
         
     def defaultsplitter(self, msg, length, splitAt):
