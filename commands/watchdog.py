@@ -68,7 +68,7 @@ def execute(self, name, params, channel, userdata, rank, chan):
                 average, minimum, maximum = 0, 0, 0
             
             # The micro prefix in unicode
-            dataOutput.append(u"{0}: [{1}\u00B5s/{2}\u00B5s/{3}\u00B5s]".encode("utf-8").format(event, 
+            dataOutput.append(u"{0}: [{1}\u00B5s/{2}\u00B5s/{3}\u00B5s]".format(event, 
                                                           round(minimum / (10**-6), 2), 
                                                           round(maximum / (10**-6), 2), 
                                                           round(average / (10**-6), 2)
@@ -95,7 +95,7 @@ def execute(self, name, params, channel, userdata, rank, chan):
                     average, minimum, maximum = 0, 0, 0
                 
                 # The micro prefix in unicode
-                dataOutput.append(u"{0}: [{1}\u00B5s/{2}\u00B5s/{3}\u00B5s]".encode("utf-8").format(event,
+                dataOutput.append(u"{0}: [{1}\u00B5s/{2}\u00B5s/{3}\u00B5s]".format(event,
                                                                     round(minimum / (10**-6), 2),
                                                                     round(maximum / (10**-6), 2),
                                                                     round(average / (10**-6), 2)
