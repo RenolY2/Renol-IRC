@@ -102,7 +102,7 @@ def execute(self, name, params, channel, userdata, rank, chan):
                                                                     )
                                   )
             
-            self.sendMessage(channel, "Statistics for event type '{0}': {1}".format(eventType,
+            self.sendMessage(channel, u"Statistics for event type '{0}': {1}".format(eventType,
                                                                                     ", ".join(dataOutput)
                                                                                     )
                              )
