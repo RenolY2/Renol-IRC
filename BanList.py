@@ -4,6 +4,8 @@ from cStringIO import StringIO
 
 ALLOWEDCHARS = '-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}'
 
+ALLOWEDCHARS_HOST = ALLOWEDCHARS + ":."
+
 class InvalidCharacterUsed(Exception):
     def __init__(self, string, char, pos):
         self.string = string
@@ -79,13 +81,10 @@ class BanList:
         if not self.__banExists__(groupName, banstring):
             self.__ban__(banstring, groupName, timestamp, banlength)
             
-            # The operation was successful
+            # The operation was successful, we banned the pattern.
             return True
         else:
-            # The pattern is already banned.
-            # We don't need to do anything.
-            
-            # The Operation was not successful
+            # We did not ban the pattern because it was already banned.
             return False
             
             
@@ -100,13 +99,10 @@ class BanList:
         if self.__banExists__(groupName, banstring):
             self.__unban__(banstring, groupName)
             
-            # The operation was successful
+            # The operation was successful, the pattern was unbanned.
             return True
         else:
-            # The pattern is not banned.
-            # We don't need to do anything.
-            
-            # The operation was not successful 
+            # We did not unban the pattern because it was never banned in the first place.
             return False
     
     def clearBanlist_all(self):
@@ -162,12 +158,7 @@ class BanList:
         if not self.__groupExists__(groupName):
             raise NoSuchBanGroup(groupName)
         else:
-            #escapedUser = self.__createString_forSQL__(user)
-            #escapedIdent = self.__createString_forSQL__(ident)
-            #escapedHost = self.__createString_forSQL__(host)
-            
-            #banstring = "{0}!{1}@{2}".format(escapedUser, escapedIdent, escapedHost)
-            banstring = "{0}!{1}@{2}".format(user, ident, host).lower()
+            banstring = u"{0}!{1}@{2}".format(user, ident, host).lower()
             
             self.cursor.execute(""" 
                                 SELECT * FROM Banlist
@@ -186,17 +177,10 @@ class BanList:
                             SELECT groupName FROM Bangroups
                             """)
         
-        result = self.cursor.fetchall()
-        return result
+        groupTuples = self.cursor.fetchall()
+        return [groupTuple[0] for groupTuple in groupTuples]
     
-    def __assembleBanstring__(self, user, ident, host):
-        escapedUser = self.__createString_forSQL__(user)
-        escapedIdent = self.__createString_forSQL__(ident)
-        escapedHost = self.__createString_forSQL__(host)
-        
-        banstring = "{0}!{1}@{2}".format(escapedUser, escapedIdent, escapedHost)
-        
-        return banstring
+    
         
     def __ban__(self, banstring, groupName = "Global", timestamp = -1, banlength = -1):
         self.cursor.execute(""" 
@@ -247,6 +231,16 @@ class BanList:
                 return False
         
         return True
+    
+    def __assembleBanstring__(self, user, ident, host):
+        escapedUser = self.__createString_forSQL__(user)
+        escapedIdent = self.__createString_forSQL__(ident)
+        escapedHost = self.__createString_forSQL__(host, hostname = True)
+        
+        banstring = u"{0}!{1}@{2}".format(escapedUser, escapedIdent, escapedHost)
+        
+        return banstring
+    
     # The createString_forSQL function takes a string and
     # formats it according to specific rules.
     # It also prevents characters that aren't in
@@ -257,7 +251,7 @@ class BanList:
     # It is not very specific and is only useful for 
     # very simple filtering so that unicode characters
     # or special characters aren't used.
-    def __createString_forSQL__(self, string):
+    def __createString_forSQL__(self, string, hostname = False):
         escape = ""
         not_escape = "*?"
         newString = StringIO()
@@ -275,24 +269,9 @@ class BanList:
             elif char in escape:
                 newString.write(self.ESCAPESTRING+char)
             else:
-                if char not in ALLOWEDCHARS:
+                if (not hostname and char not in ALLOWEDCHARS) or char not in ALLOWEDCHARS_HOST:
                     raise InvalidCharacterUsed(string, char, pos)
                 else:
                     newString.write(char)
                     
         return newString.getvalue()
-    
-    
-
-myBans = BanList("Banlist.db")
-myBans.clearBanlist_all()
-myBans.banUser("TestU*er", "baMybutt", "*")
-myBans.banUser("ABS", "*", "*")
-
-print myBans.getBans(None, "abs!bamybutt@b"), "wut"
-#print myBans.getBans()
-#print myBans.unbanUser("TestUasdsadasser", "baMybutT", "*")
-print myBans.getBans()
-print myBans.checkBan("TestUser", "baMybuTT", "Hello")
-print myBans.getGroups()
-myBans.clearBanlist_group("derp")
