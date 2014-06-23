@@ -64,10 +64,8 @@ Banlist Module Methods:
    timestamp and ban length.
  
  - self.Banlist.getGroups()
- Returns a list of all ban groups that have been defined at some point.
- Each item in the list is a tuple with the name of the group as its only item.
- (Can include ban groups which have not been defined in this session, 
-  but a previous one)
+ Returns a list of all ban groups that have been defined in the database.
+ Each item in the list is a string containing the name of group.
  
  - self.Banlist.checkBan(user, ident, host, groupName = "Global")
  * user, ident, host, groupName are strings
