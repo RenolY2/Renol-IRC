@@ -11,7 +11,7 @@ def execute(self, sendMsg, msgprefix, command, params):
     part2 = part1[2].partition("@")
     
     name = part1[0]
-    indent = part2[0]
+    ident = part2[0]
     host = part2[2]
     
     cmdprefix = self.cmdprefix
@@ -25,7 +25,7 @@ def execute(self, sendMsg, msgprefix, command, params):
         is_channel = False
         perms = ""
         #print "HELP I'M GETTING PRIVMSGD BY ",name," : ",chatMessage
-        msg_log.info("Private message from '%s' [%s@%s]: %s", name, indent, host, chatMessage)
+        msg_log.info("Private message from '%s' [%s@%s]: %s", name, ident, host, chatMessage)
     else: 
         is_channel = True
         channel = self.retrieveTrueCase(channel)
@@ -71,6 +71,17 @@ def execute(self, sendMsg, msgprefix, command, params):
     #print self.commands
     #print chatCmd
     if usedPrfx == cmdprefix and chatCmd in self.commands:
+        bannedInfo = self.Banlist.checkBan(name, ident, host)
+        
+        if bannedInfo[0] == True:
+            msg_log.info("User '%s' uses command '%s', but user is globally banned.",
+                         name, chatCmd)
+            msg_log.info("Ban information: %s", 
+                         bannedInfo[1])
+            
+            return
+            
+        
         try:
             support = self.commands[chatCmd][0].privmsgEnabled
         except AttributeError:
@@ -82,17 +93,17 @@ def execute(self, sendMsg, msgprefix, command, params):
                     msg_log.info("User '%s' uses command '%s' in channel '%s'", 
                                  name , chatCmd, channel)
                     msg_log.debug("User info for '%s': [%s@%s] Used parameters: %s Rank: %s", 
-                                  name, indent, host, chatParams[1:], perms)
+                                  name, ident, host, chatParams[1:], perms)
                 else:
                     msg_log.info("User '%s' uses command '%s'", name , chatCmd)
                     msg_log.debug("User info for '%s': [%s@%s] Used parameters: %s Rank: %s", 
-                                  name, indent, host, chatParams[1:], perms)
+                                  name, ident, host, chatParams[1:], perms)
                     msg_log.debug("User '%s' - destination: '%s' (should be the same)", name, channel)
                     
                 if support == True:
-                    self.commands[chatCmd][0].execute(self, name, chatParams[1:], channel, (indent, host), perms, is_channel)
+                    self.commands[chatCmd][0].execute(self, name, chatParams[1:], channel, (ident, host), perms, is_channel)
                 elif support == False and is_channel == True:
-                    self.commands[chatCmd][0].execute(self, name, chatParams[1:], channel, (indent, host), perms)
+                    self.commands[chatCmd][0].execute(self, name, chatParams[1:], channel, (ident, host), perms)
                     
         except KeyError as error:
             print "KeyError for command: "+str(error)
@@ -104,8 +115,8 @@ def execute(self, sendMsg, msgprefix, command, params):
         channel = is_channel == True and channel or False
         
         if channel == False: 
-            msg_log.debug("Passing a PM from user '%s' [%s@%s] to chat events: '%s'", name, indent, host, chatMessage)
+            msg_log.debug("Passing a PM from user '%s' [%s@%s] to chat events: '%s'", name, ident, host, chatMessage)
         
-        self.events["chat"].tryAllEvents(self, {"name" : name, "ident" : indent, "host" : host}, chatMessage, channel)
+        self.events["chat"].tryAllEvents(self, {"name" : name, "ident" : ident, "host" : host}, chatMessage, channel)
             
             

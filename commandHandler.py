@@ -11,6 +11,8 @@ from BotEvents import TimerEvent, MsgEvent, StandardEvent
 from IRC_registration import trackVerification
 from CommandHelp import HelpModule
 from IRCLogging import LoggingModule
+from BanList import BanList
+
 
 
 class commandHandling():
@@ -50,6 +52,8 @@ class commandHandling():
         self.PacketsReceivedBeforeDeath = Queue.Queue(maxsize = 50)
         
         self.threading = centralizedThreading.ThreadPool()
+        self.Banlist = BanList("BannedUsers.db")
+        self.Banlist.clearBanlist_all()
         
         self.helper = HelpModule()
         self.auth = None
@@ -126,13 +130,14 @@ class commandHandling():
         # to which we send the message. At the end, we add a constant (25) to the length to account
         # for whitespaces and other characters and eventual oddities. 
         # The Hostname will be limited to 63, regardless of the actual length.
+        # 7 characters for the PRIVSM string
         
         # if you want to create your own tweaked message splitter, 
         # provide it as the fourth argument to self.sendChatMessage
         # otherwise, the default one, i.e. self.defaultsplitter, is used
         if msgsplitter == None:
             msgsplitter = self.defaultsplitter
-                                                    #PRIVMSG
+            
         prefixLen = len(self.name) + len(self.ident) + 63 + 7 + len(channel) + 25
         remaining = 512-prefixLen
         #print remaining
