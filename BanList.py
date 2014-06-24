@@ -1,9 +1,11 @@
 import sqlite3
+import re
 
 from cStringIO import StringIO
 
-ALLOWEDCHARS = '-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}'
 
+ALLOWEDCHARS = '-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}'
+ALLOWEDCHARS_IDENT = ALLOWEDCHARS+"~"
 ALLOWEDCHARS_HOST = ALLOWEDCHARS + ":."
 
 class InvalidCharacterUsed(Exception):
@@ -26,7 +28,9 @@ class NoSuchBanGroup(Exception):
 
 class BanList:
     def __init__(self, filename):
-        self.ESCAPESTRING = ""
+        self.ESCAPESTRING = "/"
+        self.ESCAPE = "[]"
+        self.NOT_ESCAPE = "*?!^"
         
         self.conn = sqlite3.connect(filename)
         self.cursor = self.conn.cursor()
@@ -179,9 +183,45 @@ class BanList:
         
         groupTuples = self.cursor.fetchall()
         return [groupTuple[0] for groupTuple in groupTuples]
-    
-    
+            
+    def raw_ban(self, banstring, groupName, timestamp = -1, banlength = -1):
+        self.__ban__(banstring, groupName, timestamp, banlength)
         
+    def raw_unban(self, banstring, groupName):
+        self.__unban__(banstring, groupName)
+    
+    # We do the reverse of what __createString_forSQL__ is doing.
+    # The result is a string which should be correct for using the
+    # banUser and unbanUser methods, and the ban/unban commands.
+    def unescape_banstring(self, banstring):
+        finstring = StringIO()
+        length = len(banstring)
+        
+        string_iter = enumerate(banstring)
+        
+        for pos, char in string_iter:
+            charsLeft = length - pos - 1
+            
+            if char == "[" and charsLeft >= 3:
+                nextchar = banstring[pos+1]
+                closedBracket = banstring[pos+2]
+                
+                if closedBracket == "]":
+                    finstring.write(nextchar)
+                    string_iter.next()
+                    string_iter.next()
+                    continue
+
+            if char in self.ESCAPE:
+                finstring.write(self.ESCAPESTRING+char)
+                continue
+            
+            finstring.write(char)
+        
+        return finstring.getvalue()
+    def __regex_return_unescaped__(self, match):
+        pass
+    
     def __ban__(self, banstring, groupName = "Global", timestamp = -1, banlength = -1):
         self.cursor.execute(""" 
                             INSERT INTO Banlist(groupName, pattern, timestamp, banlength)
@@ -234,7 +274,7 @@ class BanList:
     
     def __assembleBanstring__(self, user, ident, host):
         escapedUser = self.__createString_forSQL__(user)
-        escapedIdent = self.__createString_forSQL__(ident)
+        escapedIdent = self.__createString_forSQL__(ident, ident = True)
         escapedHost = self.__createString_forSQL__(host, hostname = True)
         
         banstring = u"{0}!{1}@{2}".format(escapedUser, escapedIdent, escapedHost)
@@ -251,10 +291,12 @@ class BanList:
     # It is not very specific and is only useful for 
     # very simple filtering so that unicode characters
     # or special characters aren't used.
-    def __createString_forSQL__(self, string, hostname = False):
-        escape = ""
-        not_escape = "*?"
+    def __createString_forSQL__(self, string, hostname = False, ident = False):
+        
         newString = StringIO()
+        
+        # Both flags should not be set at once.
+        assert not ( (hostname == True) and (ident == True) )  
         
         for pos, char in enumerate(string):
             # We try reverse-escaping: 
@@ -264,12 +306,19 @@ class BanList:
             # position cannot be escaped in any way that makes sense.
             if char == self.ESCAPESTRING:
                 continue
-            if pos > 0 and string[pos-1] == self.ESCAPESTRING or char in not_escape:
+            if char in self.NOT_ESCAPE:
                 newString.write(char)
-            elif char in escape:
-                newString.write(self.ESCAPESTRING+char)
+            elif pos > 0 and string[pos-1] == self.ESCAPESTRING and char in self.ESCAPE:
+                newString.write(char)
+            elif char in self.ESCAPE:
+                #newString.write(self.ESCAPESTRING+char)
+                newString.write("["+char+"]")
             else:
-                if (not hostname and char not in ALLOWEDCHARS) or char not in ALLOWEDCHARS_HOST:
+                if  (
+                     (not hostname and not ident and char not in ALLOWEDCHARS) 
+                     or (hostname and char not in ALLOWEDCHARS_HOST)
+                     or (ident and char not in ALLOWEDCHARS_IDENT)
+                    ):
                     raise InvalidCharacterUsed(string, char, pos)
                 else:
                     newString.write(char)
