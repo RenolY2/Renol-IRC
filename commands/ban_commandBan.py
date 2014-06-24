@@ -1,3 +1,7 @@
+
+from cStringIO import StringIO
+from fnmatch import fnmatch
+
 from BanList import InvalidCharacterUsed, NoSuchBanGroup
 
 ID = "ban"
@@ -28,7 +32,12 @@ def execute(self, user, params, channel, userdata, rank):
             ident, sep, host = identAndHost.partition("@")
             
             if username == "*" and ident == "*" and host == "*":
-                self.sendNotice(user, "You can't ban everyone (including yourself)!")
+                self.sendNotice(user, "You can't ban everyone!")
+                return
+            
+            selfstring = "{0}!{1}@{2}".format(user, userdata[0], userdata[1]) # User, ident, hostname
+            if check_if_self_banned(selfstring, userstring) == True:
+                self.sendNotice(user, "You can't ban yourself!")
                 return
             
             try:
@@ -59,3 +68,33 @@ def execute(self, user, params, channel, userdata, rank):
                                                                                                   error.pos,
                                                                                                   error.string))
                 return
+
+def check_if_self_banned(userstring, pattern):
+    
+    ESCAPECHAR = "/"
+    TOESCAPE = "[]"
+    
+    string = StringIO()
+    
+    # fnmatch uses '!' for excluding character sets, but
+    # GLOB in sqlite uses '^'. Because we only use fnmatch to
+    # check if the user is banning himself, we will replace
+    # occurences of ^ with !.
+    pattern = pattern.replace("/[^", "/[!")
+    
+    for pos, letter in enumerate(pattern):
+        if letter == ESCAPECHAR:
+            continue
+        if letter in TOESCAPE and pattern[pos-1] == ESCAPECHAR:
+            string.write(letter)
+        elif letter in TOESCAPE:
+            string.write("["+letter+"]")
+        else:
+            string.write(letter)
+    
+    escaped_pattern = string.getvalue()
+    
+    if fnmatch(userstring, escaped_pattern):
+        return True
+    else:
+        return False
