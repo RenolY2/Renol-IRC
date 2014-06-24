@@ -53,7 +53,6 @@ class commandHandling():
         
         self.threading = centralizedThreading.ThreadPool()
         self.Banlist = BanList("BannedUsers.db")
-        self.Banlist.clearBanlist_all()
         
         self.helper = HelpModule()
         self.auth = None
