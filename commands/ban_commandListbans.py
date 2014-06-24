@@ -13,7 +13,7 @@ def execute(self, user, params, channel, userdata, rank):
         groupName = params[0]
         
         try:
-            bans = [banTuple[1] for banTuple in self.Banlist.getBans(groupName)]
+            bans = [self.Banlist.unescape_banstring(banTuple[1]) for banTuple in self.Banlist.getBans(groupName)]
             output = u", ".join(bans)
             
             if len(bans) == 0:

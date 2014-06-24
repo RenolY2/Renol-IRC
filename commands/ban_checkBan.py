@@ -13,7 +13,7 @@ def execute(self, user, params, channel, userdata, rank):
         
         output = []
         for ban in bans:
-            info = u"{0} [{1}]".format(ban[1], ban[0])
+            info = u"{0} [{1}]".format(self.Banlist.unescape_banstring(ban[1]), ban[0])
             output.append(info)
         
         output = u", ".join(output)
