@@ -51,11 +51,44 @@ def execute(self, name, params, channel, userdata, rank, chan):
         tzOffsetMinute = 0
     
     offsetTime = UTCtime + 3600*tzOffsetHour + 60*tzOffsetMinute
-    offsetUTCtime = time.gmtime(offsetTime)
+    
+    try:
+        offsetUTCtime = time.gmtime(offsetTime)
+        datestring = __create_date(offsetUTCtime)
+    except ValueError:
+        self.sendMessage(destination, "Intergalactic timezones not supported. Please put in a smaller number.")
+        return
+    
+    self.sendMessage(destination,  datestring)
     
     
+
+def __create_date(time_arg):
+    local_derp = time_arg
+    datetimestring = time.strftime("%I:%M%p, {0} of %B %Y", local_derp) 
+    day = time.strftime("%d", local_derp)
+    day = day.lstrip("0")
+
+    return datetimestring.format(format_day_of_month(day))
     
-    self.sendChatMessage(self.send, destination, time.asctime(offsetUTCtime))
+def choose_st_nd_rd_th(number):
+    if number.endswith("1"):
+        return "st"
+    elif number.endswith("2"):
+        return "nd"
+    elif number.endswith("3"):
+        return "rd"
+    else:
+        return "th"
+
+def format_day_of_month(day):
+    if len(day) > 1:
+        if day[-2] == 1:
+            return day + "th"
+        else:
+            return day + choose_st_nd_rd_th(day)
+    else:
+        return day + choose_st_nd_rd_th(day)
 
 def __initialize__(self, Startup):
     entry = self.helper.newHelp(ID)
