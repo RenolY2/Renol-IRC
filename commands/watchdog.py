@@ -52,6 +52,9 @@ def execute(self, name, params, channel, userdata, rank, chan):
                 if average == None:
                     average, minimum, maximum = eventStats["average"], eventStats["min"], eventStats["max"]
                 else:
+                    if eventStats["average"] == None:
+                        continue
+                        
                     if eventStats["min"] < minimum:
                         minimum = eventStats["min"]
                     if eventStats["max"] > maximum:
