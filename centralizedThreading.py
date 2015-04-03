@@ -3,6 +3,9 @@ import multiprocessing
 import traceback
 import logging
 
+from timeit import default_timer
+
+_threadlogger = logging.getLogger("ThreadPoolExceptions")
 
 class FunctionNameAlreadyExists(Exception):
     def __init__(self, eventName):
@@ -27,17 +30,51 @@ class ThreadTemplate(threading.Thread):
 
         self.base = baseReference
 
+        self._metadata = {}
+        self._startTime = None
+        self._lastTimeRunning = None
+
+
+
     def run(self):
         self.running = True
         try:
             self.function(self, self.ThreadPipe)
         except Exception as error:
+            exception = traceback.format_exc()
+
             self.ThreadPipe.send({
                                   "action" : "exceptionOccured", "exception" : error,
-                                  "functionName" : self.name, "traceback" : str(traceback.format_exc())
+                                  "functionName" : self.name, "traceback" : exception
                                   })
 
+            _threadlogger.warning("Thread '%s' crashed! Exception follows.", self.name)
+            _threadlogger.exception("Thread exception of '%s':", self.name)
+
         self.running = False
+
+    # Set the starting point for the timer.
+    def setTimer(self):
+        self._startTime = default_timer()
+
+    # Stop the timer and set the _lastTimeRunning variable
+    def stopTimer(self):
+        if self._startTime == None:
+            raise RuntimeError("Can't stop the timer if it hasn't been started yet.")
+        else:
+            self._lastTimeRunning = default_timer() - self._startTime
+            self._startTime = None
+
+    # Get the time difference between now and the starting point without stopping the timer.
+    def getTimeDiff(self):
+        if self._startTime == None:
+            raise RuntimeError("Can't get time difference if timer hasn't been started yet.")
+        else:
+            return default_timer() - self._startTime
+
+    @property
+    def timeDelta(self):
+        return self._lastTimeRunning
 
 class ThreadPool():
     def __init__(self):
