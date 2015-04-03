@@ -81,6 +81,22 @@ def execute(self, name, params, channel, userdata, rank, chan):
         finalString = "Event statistics: (min/max/average): "+", ".join(dataOutput)
         
         self.sendMessage(channel, finalString)
+
+        threadInfo = []
+        for threadName, threadData in self.threading.pool.iteritems():
+            timeDelta = threadData["thread"].timeDelta
+            if timeDelta == None:
+                timeDelta = 0
+
+            threadInfo.append(u"{0} [{1}\u00B5s]".format(threadName,
+                                                         round(timeDelta, 2)))
+
+        if len(threadInfo) == 0:
+            self.sendMessage(channel, "No threads running right now.")
+        else:
+            finalString = u"The following threads are running: "+", ".join(threadInfo)
+            self.sendMessage(channel, finalString)
+
     
     else:
         eventType = params[0]
