@@ -13,8 +13,14 @@ def execute(self, sendMsg, prefix, command, params):
     name = part1[0]
     ident = part2[0]
     host = part2[2]
-    
-    channel = self.retrieveTrueCase(params)
+
+    if not params.startswith(":"):
+        param_list = params.split(" ")
+        chan = param_list[0]
+    else:
+        chan = params.lstrip(":")
+
+    channel = self.retrieveTrueCase(chan)
     
     if self.Bot_Auth.doesExist(name) and not self.Bot_Auth.isRegistered(name):
             self.whoisUser(name)

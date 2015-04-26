@@ -13,16 +13,22 @@ def execute(self, sendMsg, prefix, command, params):
     host = part2[2]
     
     print "CHANNEL LEAVE"
-        
-    chan = self.retrieveTrueCase(params)
+
+    if params.startswith(":"):
+        chan_string = params.lstrip(":")
+    else:
+        param_list = params.split(" ")
+        chan_string = param_list[0]
+
+    channel = self.retrieveTrueCase(chan_string)
     
-    self.events["channelpart"].tryAllEvents(self, name, ident, host, chan)
+    self.events["channelpart"].tryAllEvents(self, name, ident, host, channel)
             
-    if chan != False:
-        for i in range(len(self.channelData[chan]["Userlist"])):
-            user, pref = self.channelData[chan]["Userlist"][i]
+    if channel != False:
+        for i in range(len(self.channelData[channel]["Userlist"])):
+            user, pref = self.channelData[channel]["Userlist"][i]
             if user == name:
-                del self.channelData[chan]["Userlist"][i]
+                del self.channelData[channel]["Userlist"][i]
                 break
     else:
         self.__CMDHandler_log__.debug("Channel %s not found", params)
