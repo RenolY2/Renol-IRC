@@ -46,7 +46,7 @@ alias = {"distance" : {"meter" : "m", "feet" : "ft", "mile" :"mi", "inch" : "in"
 # An App ID is required for using the API from the website.
 # Register an account on the website to receive your own App ID, or ask me for one.
 # A free account can access the API 1000 times per month
-appid = "48468715107f410f8879f6f3d7d4a231"
+appid = ""
 
 def UpdateRates(appid, path):
     try:
