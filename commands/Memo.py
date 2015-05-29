@@ -298,6 +298,35 @@ class command_PM_memos():
             
         irc.ModDota_MemoDB.removeAllMessages_toUser(name, channel)
 
+class command_PM_memos_NSA():
+    def __init__(self):
+        self.params = 1
+        self.rank = 3
+        
+    def run(self, irc, name, memoparams, channel, userdata):
+        if not irc.events["channeljoin"].doesExist("ModDotaMemo_channeljoin"):
+            irc.sendNotice(name, "Memo event isn't running.")
+            return
+        
+        currentChannels = irc.events["channeljoin"].getChannels("ModDotaMemo_channeljoin")
+        
+        if channel not in currentChannels:
+            irc.sendNotice(name, "Memo event isn't running in this channel.")
+            return
+        
+        messages = irc.ModDota_MemoDB.getAllMessages_toUser(memoparams[0], channel)
+        
+        if len(messages) == 0:
+            irc.sendNotice(name, "You have no messages.")
+            return
+        else:
+            suffix = (len(messages) != 1 and "s") or ""
+            irc.sendNotice(name, "You have {0} message{1}.".format(len(messages), suffix))
+            
+        for memo in messages:
+            memoID, date, author, target, text = memo
+            irc.sendNotice(name, u"{3}: <{0}> {1}  [sent at {2}]".format(author, text, date, name))
+
 class command_clear_memos():
     def __init__(self):
         self.params = 0
@@ -323,7 +352,33 @@ class command_clear_memos():
             irc.sendNotice(name, "You have {0} message{1}.".format(msgcount, suffix))
             irc.ModDota_MemoDB.removeAllMessages_toUser(name, channel)
             irc.sendNotice(name, "All messages deleted.")
-
+            
+class command_clear_memos_NSA():
+    def __init__(self):
+        self.params = 1
+        self.rank = 3
+        
+    def run(self, irc, name, memoparams, channel, userdata):
+        if not irc.events["channeljoin"].doesExist("ModDotaMemo_channeljoin"):
+            irc.sendNotice(name, "Memo event isn't running.")
+            return
+        
+        currentChannels = irc.events["channeljoin"].getChannels("ModDotaMemo_channeljoin")
+        
+        if channel not in currentChannels:
+            irc.sendNotice(name, "Memo event isn't running in this channel.")
+            return
+        
+        msgcount =  irc.ModDota_MemoDB.getMsgCount_toUser(memoparams[0], channel)[0]
+        
+        if msgcount == 0:
+            irc.sendNotice(name, "You have no messages.")
+        else:
+            suffix = (msgcount == 1 and "") or "s"
+            irc.sendNotice(name, "You have {0} message{1}.".format(msgcount, suffix))
+            irc.ModDota_MemoDB.removeAllMessages_toUser(memoparams[0], channel)
+            irc.sendNotice(name, "All messages deleted.")
+            
 class command_inbox():
     def __init__(self):
         self.params = 0
@@ -408,7 +463,9 @@ memo_commands = {"enable" : command_turnOn(),
                  "pm" : command_PM_memos(),
                  "clear" : command_clear_memos(),
                  "help" : command_help(),
-                 "inbox" : command_inbox()}
+                 "inbox" : command_inbox(),
+                 "nsa_pm" : command_PM_memos_NSA(),
+                 "nsa_clear": command_clear_memos_NSA()}
 
 ##
 ##
