@@ -50,7 +50,7 @@ def execute(self, user, params, channel, userdata, rank):
                 else:
                     group = params[1]
                     if len(params) > 2:
-                        ban_reason = " ".join(params[3:])
+                        ban_reason = " ".join(params[2:])
                     else:
                         ban_reason = "None"
 
