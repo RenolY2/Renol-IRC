@@ -28,7 +28,7 @@ def execute(self, user, params, channel, userdata, rank):
             self.sendNotice(user, "User string should be formatted like this: username!ident@host")
             return
         else:
-            username, sep, identAndHost =  userstring.partition("!")
+            username, sep, identAndHost = userstring.partition("!")
             ident, sep, host = identAndHost.partition("@")
             
             if username == "*" and ident == "*" and host == "*":
@@ -36,25 +36,31 @@ def execute(self, user, params, channel, userdata, rank):
                 return
             
             selfstring = "{0}!{1}@{2}".format(user, userdata[0], userdata[1]) # User, ident, hostname
-            if check_if_self_banned(selfstring, userstring) == True:
+            if check_if_self_banned(selfstring, userstring) is True:
                 self.sendNotice(user, "You can't ban yourself!")
                 return
             
             try:
                 if len(params) == 1:
-                    result = self.Banlist.banUser(username, ident, host)
-                    if result == True:
+                    result = self.Banlist.banUser(username, ident, host, ban_reason="None")
+                    if result is True:
                         self.sendNotice(user, u"Userstring {0} banned.".format(userstring))
-                    if result == False:
+                    if result is False:
                         self.sendNotice(user, u"Userstring {0} is already banned.".format(userstring))
                 else:
                     group = params[1]
-                    result = self.Banlist.banUser(username, ident, host, group)
-                    if result == True:
+                    if len(params) > 2:
+                        ban_reason = " ".join(params[3:])
+                    else:
+                        ban_reason = "None"
+
+                    result = self.Banlist.banUser(username, ident, host, group, ban_reason=ban_reason)
+
+                    if result is True:
                         self.sendNotice(user, 
                                         u"Userstring {0} banned in group '{1}'.".format(userstring, group)
                                         )
-                    if result == False:
+                    if result is False:
                         self.sendNotice(user, 
                                         u"Userstring {0} is already banned in group {1}.".format(userstring, group)
                                         )

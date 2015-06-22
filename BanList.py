@@ -3,7 +3,6 @@ import re
 
 from cStringIO import StringIO
 
-
 ALLOWEDCHARS = '-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}'
 ALLOWEDCHARS_IDENT = ALLOWEDCHARS+"~"
 ALLOWEDCHARS_HOST = ALLOWEDCHARS + ":."
@@ -15,16 +14,15 @@ class InvalidCharacterUsed(Exception):
         self.pos = pos
         
     def __str__(self):
-        hexChar = hex( ord(self.char) )
-        return "String contains invalid character {0} on position {1}".format(hexChar, self.pos)
+        hex_char = hex(ord(self.char))
+        return "String contains invalid character {0} on position {1}".format(hex_char, self.pos)
 
 class NoSuchBanGroup(Exception):
-    def __init__(self, groupName):
-        self.group = groupName
+    def __init__(self, group_name):
+        self.group = group_name
         
     def __str__(self):
         return "No such ban group exists: '{0}'".format(self.group)
-
 
 class BanList:
     def __init__(self, filename):
@@ -37,7 +35,10 @@ class BanList:
         
         # Create table for bans
         self.cursor.execute(""" 
-                            CREATE TABLE IF NOT EXISTS Banlist(groupName TEXT, pattern TEXT, timestamp INTEGER, banlength INTEGER)
+                            CREATE TABLE IF NOT EXISTS Banlist(groupName TEXT, pattern TEXT,
+                                                               ban_reason TEXT,
+                                                               timestamp INTEGER, banlength INTEGER
+                                                               )
                             """)
         
         # Create table for the names of the ban groups.
@@ -48,8 +49,7 @@ class BanList:
                             """)
         
         self.defineGroup("Global")
-        
-        
+
     # You need to define a group name if you want
     # to have your own ban groups.
     # This should prevent accidents in which an user
@@ -69,32 +69,27 @@ class BanList:
         # False means that no new group has been defined, i.e.
         # the group already exists.
         return False
-            
-    
-    
         
-        
-        
-    def banUser(self, user, ident = "*", host = "*", groupName = "Global", 
-                timestamp = -1, banlength = -1):
+    def banUser(self, user, ident="*", host="*", groupName="Global",
+                ban_reason="None",
+                timestamp=(-1), banlength=(-1)):
+
         banstring = self.__assembleBanstring__(user, ident, host).lower()
         
         if not self.__groupExists__(groupName):
             raise NoSuchBanGroup(groupName)
         
         if not self.__banExists__(groupName, banstring):
-            self.__ban__(banstring, groupName, timestamp, banlength)
+            self.__ban__(banstring, groupName, ban_reason, timestamp, banlength)
             
             # The operation was successful, we banned the pattern.
             return True
         else:
             # We did not ban the pattern because it was already banned.
             return False
-            
-            
         
-    def unbanUser(self, user, ident = "*", host = "*",
-                  groupName = "Global"):
+    def unbanUser(self, user, ident="*", host="*",
+                  groupName="Global"):
         banstring = self.__assembleBanstring__(user, ident, host).lower()
         
         if not self.__groupExists__(groupName):
@@ -123,9 +118,9 @@ class BanList:
         self.conn.commit()
         
     
-    def getBans(self, groupName = None, matchingString = None):
-        if groupName == None:
-            if matchingString == None:
+    def getBans(self, groupName=None, matchingString=None):
+        if groupName is None:
+            if matchingString is None:
                 self.cursor.execute(""" 
                                     SELECT * FROM Banlist
                                     """)
@@ -136,9 +131,10 @@ class BanList:
                                     """, (matchingString.lower(), ))
             
             return self.cursor.fetchall()
+
         else:
             if self.__groupExists__(groupName):
-                if matchingString == None:
+                if matchingString is None:
                     self.cursor.execute(""" 
                                         SELECT * FROM Banlist
                                         WHERE groupName = ?
@@ -157,7 +153,7 @@ class BanList:
     
     
     def checkBan(self, user, ident, host,
-                      groupName = "Global"):
+                      groupName="Global"):
         
         if not self.__groupExists__(groupName):
             raise NoSuchBanGroup(groupName)
@@ -184,8 +180,8 @@ class BanList:
         groupTuples = self.cursor.fetchall()
         return [groupTuple[0] for groupTuple in groupTuples]
             
-    def raw_ban(self, banstring, groupName, timestamp = -1, banlength = -1):
-        self.__ban__(banstring, groupName, timestamp, banlength)
+    def raw_ban(self, banstring, groupName, ban_reason, timestamp=(-1), banlength=(-1)):
+        self.__ban__(banstring, groupName, ban_reason, timestamp, banlength)
         
     def raw_unban(self, banstring, groupName):
         self.__unban__(banstring, groupName)
@@ -222,11 +218,11 @@ class BanList:
     def __regex_return_unescaped__(self, match):
         pass
     
-    def __ban__(self, banstring, groupName = "Global", timestamp = -1, banlength = -1):
+    def __ban__(self, banstring, groupName="Global", ban_reason="None", timestamp=(-1), banlength=(-1)):
         self.cursor.execute(""" 
-                            INSERT INTO Banlist(groupName, pattern, timestamp, banlength)
-                            VALUES (?, ?, ?, ?)
-                            """, (groupName, banstring, timestamp, banlength))
+                            INSERT INTO Banlist(groupName, pattern, ban_reason, timestamp, banlength)
+                            VALUES (?, ?, ?, ?, ?)
+                            """, (groupName, banstring, ban_reason, timestamp, banlength))
         
         self.conn.commit()
         
@@ -324,3 +320,4 @@ class BanList:
                     newString.write(char)
                     
         return newString.getvalue()
+
