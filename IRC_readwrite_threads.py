@@ -91,8 +91,15 @@ class IRC_writer(threading.Thread):
         while self.ready == True:
             try:
                 toSend = self.buffer.get_nowait()
-                self.sock.send(toSend.encode("utf-8", "replace"))
-                time.sleep(1.5)
+                send_away = toSend.encode("utf-8", "replace")
+
+                self.sock.send(send_away)
+                #print(len(send_away))
+
+                if len(send_away) > 250:
+                    time.sleep(3)
+                else:
+                    time.sleep(2)
                 #print "SENT: "+toSend
                 
                 
